@@ -18,7 +18,7 @@
     VN.ground(420, '#4fbf55', '#3aa548', -0.05);
     plaza(); LAYOUT.forEach((id, i) => building(id, i)); rooms(); props(); npcs();
     VN.clouds(M.low ? 6 : 12, 200, 60);
-    H.board = VN.jumbo(0, 7.5, -9.5, 0, 7, 3.6); drawBoard();
+    H.board = VN.jumbo(0, 12.5, -9.5, 0, 7, 3.6); drawBoard();
     H.rebuildAvatar(); H.built = true;
     V.anim((dt, t) => { H.spin.forEach((s) => { s.rotation.y += dt * (s.userData.spd || 0.6); s.position.y = s.userData.y0 + Math.sin(t * 1.5 + s.userData.ph) * 0.25; }); });
   };
