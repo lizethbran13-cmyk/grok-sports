@@ -320,7 +320,7 @@
       function cam(dt, snap) {
         const me = ctx.me >= 0 ? ctx.me : 0, p = S.P[me] || S.P[0], s = side(p.team);
         E.fov(C.tt ? 55 : 56);
-        if (C.tt) E.camLook(p.x * 0.4, 2.15, s * (HL + 2.9), p.x * 0.15, Y0 + 0.05, -s * 0.5, dt, 5, snap);
+        if (C.tt) E.camLook(p.x * 0.3 + s * 1.3, 4.6, s * (HL + 5.2), p.x * 0.1, Y0 - 0.4, -s * 0.8, dt, 5, snap);
         else if (C.noBounce) E.camLook(p.x * 0.35, 6.2, s * (HL + 6.2), p.x * 0.15, 0.6, -s * 1.8, dt, 4, snap);
         else E.camLook(p.x * 0.35, 6.6, s * (HL + 9.5), p.x * 0.15, 0.4, -s * 3.0, dt, 4, snap);
       }
@@ -358,6 +358,10 @@
       V.world.add(net(6.2, 0.76, 0.79, 0).group(false)); VN.add(b.group(true));
       VN.stand({ x: -8.5, z: 0, ry: -Math.PI / 2, len: 26, rows: M.low ? 4 : 6, seats: ['#0891b2', '#facc15'], wall: '#164e63', seed: 31 });
       VN.stand({ x: 8.5, z: 0, ry: Math.PI / 2, len: 26, rows: M.low ? 4 : 6, seats: ['#0891b2', '#facc15'], wall: '#164e63', seed: 32 });
+      VN.stand({ x: 0, z: -10.2, ry: Math.PI, len: 15, rows: M.low ? 4 : 6, seats: ['#0891b2', '#facc15'], wall: '#164e63', seed: 33 });
+      VN.stand({ x: 0, z: 10.2, ry: 0, len: 15, rows: M.low ? 3 : 5, seats: ['#0891b2', '#facc15'], wall: '#164e63', seed: 34 });
+      adBoards(7.4, 8.4, ['#facc15', '#0891b2', '#f97316', '#22c55e'], ['GROK', 'SMASH!', 'SHUTTLE', 'GO!']);
+      chair(3.9, 0, -Math.PI / 2);
       VN.jumbo(0, 7.5, -16.5, 0, 7, 3.4);
     } else {
       VN.arena(26, 30, 10, { wall: '#7f1d1d', trim: '#facc15', floor: '#1e3a8a' });
@@ -375,9 +379,21 @@
       VN.add(b.group(true));
       VN.stand({ x: -7.5, z: 0, ry: -Math.PI / 2, len: 18, rows: M.low ? 3 : 5, seats: ['#dc2626', '#f8fafc'], wall: '#7f1d1d', seed: 41 });
       VN.stand({ x: 7.5, z: 0, ry: Math.PI / 2, len: 18, rows: M.low ? 3 : 5, seats: ['#dc2626', '#f8fafc'], wall: '#7f1d1d', seed: 42 });
+      VN.stand({ x: 0, z: -9.0, ry: Math.PI, len: 12, rows: M.low ? 3 : 5, seats: ['#dc2626', '#f8fafc'], wall: '#7f1d1d', seed: 43 });
+      const u = new M.B(); u.box(1.2, 0.75, 0.6, 0.06, '#1e3a8a', 2.6, 0.38, 0); u.box(1.3, 0.05, 0.7, 0.02, '#f8fafc', 2.6, 0.77, 0); u.box(0.3, 0.3, 0.02, 0.02, '#111827', 2.6, 0.95, 0.15, -0.3, 0, 0);
+      [-1, 1].forEach((k) => { u.box(0.4, 0.5, 0.4, 0.08, '#475569', -1.6, 0.25, k * 2.6); u.box(0.36, 0.06, 0.3, 0.03, '#f8fafc', -1.6, 0.52, k * 2.6); });
+      for (let i = 0; i < 6; i++) u.box(0.6, 1.2, 0.06, 0.03, ['#facc15', '#e11d48', '#3b82f6'][i % 3], -6 + i * 2.4, 6.5, -14.8, 0, 0, 0, 'glow');
+      VN.add(u.group(true)); chair(2.6, -0.5, -Math.PI / 2);
+      adSigns(7, 4.5);
       VN.jumbo(0, 5.5, -11.5, 0, 6, 3);
     }
   }
+  // printed ad boards around a court (two long sides + ends)
+  function adBoards(hx, hz, cols, words) {
+    let k = 0; for (let i = -2; i <= 2; i++) [-hz, hz].forEach((z) => { const g = V.sign(words[k % words.length], 2.6, 0.7, cols[k % cols.length], '#ffffff'); g.position.set(i * 2.8, 0.35, z + (z > 0 ? 0.02 : -0.02) * 0); g.rotation.y = z > 0 ? Math.PI : 0; V.world.add(g); k++; });
+    for (let i = -2; i <= 2; i++) [-hx, hx].forEach((x) => { const g = V.sign(words[k % words.length], 2.6, 0.7, cols[k % cols.length], '#ffffff'); g.position.set(x, 0.35, i * 2.9); g.rotation.y = x > 0 ? -Math.PI / 2 : Math.PI / 2; V.world.add(g); k++; });
+  }
+  function adSigns(hz, hx) { for (let i = -3; i <= 3; i += 2) [-hz + 0.04, hz - 0.04].forEach((z) => { const g = V.sign(i % 4 === 1 ? 'GROK PING' : 'TOP SPIN!', 1.8, 0.6, i % 4 === 1 ? '#1e3a8a' : '#e11d48', '#ffffff'); g.position.set(i * 2, 0.35, z); g.rotation.y = z > 0 ? Math.PI : 0; V.world.add(g); }); void hx; }
   function chair(x, z, ry) { const b = new M.B(); [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]].forEach((p) => b.cyl(0.04, 0.04, 2, '#e5e7eb', p[0], 1, p[1], 0, 0, 0, null, 6)); b.box(1, 0.1, 1, 0.03, '#15803d', 0, 2, 0); b.box(1, 0.8, 0.1, 0.03, '#15803d', 0, 2.4, 0.45); b.box(0.9, 0.8, 0.06, 0.02, '#14532d', 0, 2.4, -0.48); const g = b.group(true); g.position.set(x, 0, z); g.rotation.y = ry; VN.add(g); const ump = M.athlete(Object.assign(D.aiLook(77), { tool: 'none', hat: 'visor', shirt: '#f8fafc' })); ump.position.set(x, 1.15, z); ump.rotation.y = ry + Math.PI; ump.scale.setScalar(0.95); M.outline(ump); VN.add(ump); }
   SP.Sports.tennis = SP.NetGame('tennis'); SP.Sports.tennis.rec = { singles: { n: 'Games won' }, doubles: { n: 'Games won' } };
   SP.Sports.badminton = SP.NetGame('badminton'); SP.Sports.badminton.rec = { singles: { n: 'Points' }, doubles: { n: 'Points' } };
