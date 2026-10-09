@@ -21,7 +21,7 @@
   // sports: building = hub plaza venue; modes: id, n, size = players per team (or 'turns' for take-turn sports)
   D.SPORTS = [
     { id: 'soccer', n: 'Soccer', icon: '⚽', col: '#16a34a', tool: 'none', music: 'soccer',
-      modes: [{ id: '3v3', n: '3 vs 3 Match', team: 3, desc: '3-minute arena match. Most goals wins (golden goal if tied).' }, { id: 'shootout', n: 'Shootout', turns: true, desc: '5 penalty kicks each. Swipe to shoot, tap to dive in goal.' }],
+      modes: [{ id: '3v3', n: '3 vs 3 Match', team: 3, desc: '3-minute arena match. Most goals wins (golden goal if tied).' }, { id: 'shootout', n: 'Shootout', turns: true, desc: '5 penalty kicks each vs the CPU keeper. Swipe to shoot, curve it into the corners!' }],
       how: ['Joystick to run. You keep the ball when you touch it.', 'SWIPE toward the goal to shoot. Long fast swipe = hard shot.', 'TAP to pass to a teammate.', 'No ball? TAP to tackle when you are close.', 'The arena has walls, so the ball never goes out!'] },
     { id: 'basketball', n: 'Basketball', icon: '🏀', col: '#f97316', tool: 'none', music: 'arena',
       modes: [{ id: '3pt', n: '3-Point Contest', turns: true, desc: '60 seconds, 5 racks. Rainbow money ball = 2 points.' }, { id: '2v2', n: '2 vs 2', team: 2, desc: 'Half court to 11. Inside = 1, behind the arc = 2.' }],

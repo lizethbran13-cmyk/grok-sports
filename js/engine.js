@@ -182,6 +182,7 @@
     const award = SP.G.award(ctx.sp.id, ctx.mode.id, { win, draw, vsCpu, diff: ctx.diffName, score: res.score ? res.score[ctx.me] : null, stats: E.statsMine, spectator: !me });
     setTimeout(() => { if (E.ctx === ctx) SP.UI.results(res, award, win, draw); }, 1600);
   };
+  E.wins = function (t) { const n = E.teamName(t); return n + (/CPU$|\+/.test(n) ? ' win' : ' wins'); };
   E.teamName = function (t) { const ctx = E.ctx, ps = ctx.players.filter((p) => p.team === t); if (ps.length === 1) return ps[0].name; const h = ps.filter((p) => p.ctrl === 'human'); return h.length ? h.map((p) => p.name).join(' + ') : D.TEAM_NAME[t] + ' CPU'; };
 
   /* ---------- shared physics helpers ---------- */
