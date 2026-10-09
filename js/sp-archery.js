@@ -36,7 +36,8 @@
     }
     function land() {
       const f = st.fly, i = f.i; st.scores[i].push(f.sc); if (f.sc === 10) st.x10[i]++;
-      arrows.push(mkArrow(f.x, f.y));
+      arrows.push(mkArrow(f.x, f.y)); hits.push([Math.round(f.x * 1000) / 1000, Math.round(f.y * 1000) / 1000]);
+      if (f.sc >= 9 && ctx.isHuman(i)) ctx.stat(i, 'gold');
       ctx.ev({ t: 'fx', k: f.sc >= 9 ? 'cup' : f.sc ? 'thud' : 'miss', a: 0.6 });
       ctx.ev({ t: 'msg', b: f.sc === 10 ? 'BULLSEYE!' : f.sc ? String(f.sc) : 'MISS', s: ctx.players[i].name, d: 1100 });
       if (f.sc === 10) { ctx.ev({ t: 'party', x: 0, y: TY + 1, z: -end().d, n: 40 }); VN.roar(0.8); if (ctx.isHuman(i)) ctx.stat(i, 'bull'); }
@@ -73,9 +74,9 @@
       ctx.end({ win: wi < 0 ? -1 : ctx.players[wi].team, title: wi < 0 ? "It's a tie!" : ctx.players[wi].name + ' wins with ' + best + '!', lines: ctx.players.map((p, i) => p.name + ': ' + tot[i] + ' / 90 · ' + st.x10[i] + ' bullseyes'), score });
     }
     /* ---- view ---- */
-    let tgt, reticle, flyM, arrows = [], flag, lane;
+    let tgt, reticle, flyM, arrows = [], flag, lane, hits = [];
     function mkArrow(x, y) { const b = new M.B(); b.cyl(0.008, 0.008, 0.7, '#7c2d12', 0, 0, 0.35, Math.PI / 2, 0, 0, null, 5); b.box(0.06, 0.04, 0.12, 0.01, '#ef4444', 0, 0.02, 0.66); b.box(0.06, 0.04, 0.12, 0.01, '#facc15', 0, -0.02, 0.66); const g = b.group(false); g.position.set(x, TY + y, -end().d + 0.05); g.rotation.set(Ph.gauss(R) * 0.05, Ph.gauss(R) * 0.05, 0); V.world.add(g); return g; }
-    function clearArrows() { arrows.forEach((a) => V.world.remove(a)); arrows = []; }
+    function clearArrows() { arrows.forEach((a) => V.world.remove(a)); arrows = []; if (!ctx.guest) hits = []; }
     function face(r) {
       const g = new T.Group(), cols = ['#f8fafc', '#f8fafc', '#111827', '#111827', '#38bdf8', '#38bdf8', '#ef4444', '#ef4444', '#facc15', '#facc15'];
       for (let k = 0; k < 10; k++) { const ro = r * (1 - k / 10), ri = r * (1 - (k + 1) / 10); const m = new T.Mesh(new T.RingGeometry(ri, ro, 48), new T.MeshLambertMaterial({ color: cols[k] })); m.position.z = 0.001 * k; g.add(m); const l = new T.Mesh(new T.RingGeometry(ro - 0.003, ro, 48), new T.MeshBasicMaterial({ color: k === 2 || k === 3 ? '#e5e7eb' : '#111827' })); l.position.z = 0.012; g.add(l); }
@@ -114,20 +115,27 @@
     let fov = 50;
     function view(dt) {
       E.syncModels(dt); const e = end(), a = st.aim;
-      reticle.visible = !!(a && st.turn === ctx.me && st.phase === 'aim'); if (reticle.visible) reticle.position.set(a.x + a.ox, TY + a.y + a.oy, -e.d + 0.05);
+      const ha = ctx.guest ? st.haim : a ? [a.x + a.ox, a.y + a.oy] : null;
+      reticle.visible = !!(ha && st.turn === ctx.me && st.phase === 'aim'); if (reticle.visible) reticle.position.set(ha[0], TY + ha[1], -e.d + 0.05);
+      if (ctx.guest && st.fly && st.phase === 'fly') st.fly.t = Math.min(st.fly.T, st.fly.t + dt);
       const f = st.fly; flyM.visible = st.phase === 'fly'; if (f && st.phase === 'fly') { const k = f.t / f.T, z0 = -0.5, z1 = -e.d + 0.4; flyM.position.set(U.lerp(f.sx, f.x, k), U.lerp(1.5, TY + f.y, k) + Math.sin(k * Math.PI) * e.d * 0.012, U.lerp(z0, z1, k)); }
       flag.rotation.y = st.wind * -0.35 + Math.sin(V.t * 6) * 0.08 * (0.3 + Math.abs(st.wind)); flag.position.x = 3.6 + st.wind * 0.12;
-      S.P.forEach((p, i) => { p.a = st.aim && i === st.turn ? 'draw' : p.a === 'draw' ? 'idle' : p.a; p.hid = false; });
+      if (!ctx.guest) S.P.forEach((p, i) => { p.a = st.aim && i === st.turn ? 'draw' : p.a === 'draw' ? 'idle' : p.a; p.hid = false; });
     }
     function cam(dt, snap) {
       const e = end(), p = S.P[st.turn];
-      if (st.phase === 'aim' && st.aim || st.phase === 'fly' || st.phase === 'show') {
+      if (st.phase === 'aim' && (st.aim || (ctx.guest && st.haim)) || st.phase === 'fly' || st.phase === 'show') {
         // scope: zoom onto the target face
         const want = 2 * Math.atan((e.r * 2.6) / e.d) * 180 / Math.PI; fov = U.lerp(fov, want, 1 - Math.exp(-dt * 6)); E.fov(fov);
         E.camLook(p.x * 0.3, 1.65, 0.6, 0, TY, -e.d, dt, 6, snap);
       } else { fov = U.lerp(fov, 52, 1 - Math.exp(-dt * 5)); E.fov(fov); E.camLook(p.x + 2.4, 2.7, 4.8, p.x * 0.2, 1.1, -e.d * 0.6, dt, 4, snap); }
     }
-    return { S, build, sim, input, view, cam, st, joy: false, shoot, ENDS };
+    const r3 = (v) => Math.round((v || 0) * 1000) / 1000;
+    const sync = { get: () => ({ ph: st.phase, tu: st.turn, en: st.end, ar: st.arrow, wi: st.wind, fl: st.fly ? [r3(st.fly.x), r3(st.fly.y), r3(st.fly.t), r3(st.fly.T), r3(st.fly.sx)] : 0, ha: st.aim ? [r3(st.aim.x + st.aim.ox), r3(st.aim.y + st.aim.oy), r3(st.aim.pw)] : 0, hs: hits }),
+      set: (v) => { const pe = st.end; st.phase = String(v.ph); st.turn = v.tu | 0; st.end = U.clamp(v.en | 0, 0, 3); st.arrow = v.ar | 0; st.wind = +v.wi || 0; st.fly = Array.isArray(v.fl) ? { x: +v.fl[0], y: +v.fl[1], t: +v.fl[2], T: +v.fl[3] || 1, sx: +v.fl[4] } : null; st.haim = Array.isArray(v.ha) ? v.ha : null;
+        if (st.end !== pe && st.end < 3) { clearArrows(); moveTarget(); } const hs = Array.isArray(v.hs) ? v.hs : []; if (hs.length < arrows.length) clearArrows(); while (arrows.length < hs.length) { const q = hs[arrows.length]; arrows.push(mkArrow(+q[0] || 0, +q[1] || 0)); } } };
+    const localInput = (ev) => { if (ev.k === 'down') st.aim = { x: 0, y: 0, ox: 0, oy: 0, pw: 0, t: 0, bx: 0, by: 0 }; else if (ev.k === 'up') st.aim = null; };
+    return { S, build, sim, input, view, cam, st, joy: false, shoot, ENDS, sync, localInput };
   };
   SP.Sports.archery.rec = { match: { n: 'Best target score' } };
 })();

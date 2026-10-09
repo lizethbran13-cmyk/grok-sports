@@ -132,7 +132,7 @@
         ctx.ev({ t: 'burst', x: ball.x, y: 0.05, z: ball.z, c: '#fde68a', n: 12, sp: 2.5 }); ctx.ev({ t: 'fx', k: 'thud', a: 0.4 });
         if (inC) point(1 - s, s === st.team && st.touches > 0 && !st.crossed ? 'Dropped it!' : 'Kill!');
         else { const lastT = st.last >= 0 ? P[st.last].team : st.team; point(1 - lastT, 'Out!'); }
-        if (ctx.isHuman(st.last) && inC && s !== P[st.last].team) ctx.stat(st.last, 'kill');
+        if (ctx.isHuman(st.last) && inC && s !== P[st.last].team) ctx.stat(st.last, st.kind === 'spike' ? 'spike' : 'kill');
         return;
       }
       if (Math.abs(ball.x) > HW + 6 || Math.abs(ball.z) > HL + 6) { const lastT = st.last >= 0 ? P[st.last].team : st.team; point(1 - lastT, 'Out!'); return; }
@@ -193,12 +193,15 @@
       setupServe();
     }
     function view(dt) {
+      if (ctx.guest) st.t += dt;
       E.syncModels(dt); bm.position.set(ball.x, ball.y, ball.z); bm.rotation.x += dt * 5; sh.position.set(ball.x, 0.02, ball.z);
       const w = st.want; ring.visible = !!(w && ctx.isHuman(w.i) && w.i === ctx.me && st.phase === 'rally'); if (ring.visible) { const k = U.clamp((w.at - st.t) / 1.2, 0, 1); ring.position.set(w.x, 0.03, w.z); ring.scale.setScalar(0.6 + k * 1.6); ring.material.color.set(k < 0.25 ? '#4ade80' : '#ffe14d'); }
       const me = ctx.me; mark.visible = me >= 0 && !!P[me]; if (mark.visible) mark.position.set(P[me].x, P[me].y + 2.7 + Math.sin(V.t * 5) * 0.08, P[me].z);
     }
     function cam(dt, snap) { const s = side(ctx.myTeam || 0); E.fov(56); E.camLook(ball.x * 0.25, 7.2, s * (HL + 8.5), ball.x * 0.15, 0.8, -s * 1.5, dt, 3, snap); }
-    return { S, build, sim, input, view, cam, st, ball, touch, serve };
+    const sync = { get: () => ({ ph: st.phase, w: st.want && !st.want.miss ? { i: st.want.i, x: Math.round(st.want.x * 100) / 100, z: Math.round(st.want.z * 100) / 100, r: Math.round((st.want.at - st.t) * 100) / 100, kind: st.want.kind } : null }),
+      set: (v) => { st.phase = String(v.ph); st.want = v.w ? { i: v.w.i | 0, x: +v.w.x, z: +v.w.z, at: st.t + (+v.w.r || 0), kind: String(v.w.kind) } : null; } };
+    return { S, build, sim, input, view, cam, st, ball, touch, serve, sync };
   };
   SP.Sports.volleyball.rec = { '2v2': { n: 'Points in a match' } };
 })();

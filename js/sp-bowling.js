@@ -227,7 +227,10 @@
       else if (st.phase === 'roll' && ball.z > -LL + 5) E.camLook(ball.x * 0.6, 1.4, ball.z + 3.0, ball.x * 0.3, 0.2, ball.z - 6, dt, 6, snap);
       else E.camLook(0, 1.3, -LL + 3.6, 0, 0.15, -LL - 0.4, dt, 3.5, snap);
     }
-    return { S, build, sim, input, view, cam, st, joy: false, roll, pins, ball, cpuRoll };
+    const r2 = (v) => Math.round((v || 0) * 100) / 100;
+    const sync = { get: () => ({ ph: st.phase, tu: st.turn, g: ball.gut ? 1 : 0, rx: r2(ball.rx), pn: pins.map((p) => [r2(p.x), r2(p.z), p.v ? 1 : 0, r2(p.tilt), r2(p.fall)]) }),
+      set: (v) => { st.phase = String(v.ph); st.turn = v.tu | 0; ball.gut = !!v.g; ball.rx = +v.rx || 0; (v.pn || []).forEach((q, i) => { const p = pins[i]; if (!p || !Array.isArray(q)) return; p.x = +q[0]; p.z = +q[1]; p.v = !!q[2]; p.tilt = +q[3] || 0; p.fall = +q[4] || 0; }); } };
+    return { S, build, sim, input, view, cam, st, joy: false, roll, pins, ball, cpuRoll, sync };
   };
   SP.Sports.bowling.rec = { quick: { n: 'Best 5-frame score' }, full: { n: 'Best game' } };
 })();

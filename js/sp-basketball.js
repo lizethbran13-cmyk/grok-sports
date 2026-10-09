@@ -89,7 +89,7 @@
     function sim(dt) {
       if (st.over) return;
       st.t += dt; st.cool = Math.max(0, st.cool - dt);
-      balls.forEach((b) => { if (!b.fly) return; b.age += dt; const r = stepBall(b, dt, ctx.ev); if (r === 'make') { const v = b.money ? 2 : 1; st.pts[b.who] += v; st.made[b.who]++; ctx.ev({ t: 'fx', k: b.rim ? 'cup' : 'swish' }); ctx.ev({ t: 'burst', x: RIM.x, y: RIM.y, z: RIM.z, c: b.money ? '#ff4fd8' : '#ffe14d', n: 14 }); if (b.money) ctx.ev({ t: 'hint', b: '🌈 MONEY! +2', d: 700 }); VN.roar(0.4); if (ctx.isHuman(b.who)) ctx.stat(b.who, 'bucket'); }
+      balls.forEach((b) => { if (!b.fly) return; b.age += dt; const r = stepBall(b, dt, ctx.ev); if (r === 'make') { const v = b.money ? 2 : 1; st.pts[b.who] += v; st.made[b.who]++; ctx.ev({ t: 'fx', k: b.rim ? 'cup' : 'swish' }); ctx.ev({ t: 'burst', x: RIM.x, y: RIM.y, z: RIM.z, c: b.money ? '#ff4fd8' : '#ffe14d', n: 14 }); if (b.money) ctx.ev({ t: 'hint', b: '🌈 MONEY! +2', d: 700 }); VN.roar(0.4); if (ctx.isHuman(b.who)) ctx.stat(b.who, 'bucket'); if (ctx.isHuman(b.who)) ctx.stat(b.who, 'three'); }
         if (b.age > 3.2) { b.fly = false; b.v = false; b.y = -5; } });
       if (st.phase === 'ready') { st.t > 1.6 && (st.phase = 'shoot', st.t = 0); upd(); return; }
       if (st.phase === 'shoot' || st.phase === 'last') {
@@ -118,7 +118,7 @@
       rackM.forEach((bs, r) => bs.forEach((m, k) => { m.visible = st.phase === 'ready' || r > st.rack || (r === st.rack && k >= st.ball); }));
     }
     function cam(dt, snap) { const p = S.P[st.turn], dx = RIM.x - p.x, dz = RIM.z - p.z, l = Math.hypot(dx, dz); E.fov(56); E.camLook(p.x - dx / l * 4.8 - dz / l * 1.1, 4.0, p.z - dz / l * 4.8 + dx / l * 1.1, RIM.x, 2.7, RIM.z, dt, 5, snap); }
-    return { S, build, sim, input, view, cam, st, joy: false, shoot };
+    return { S, build, sim, input, view, cam, st, joy: false, shoot, sync: U.syncer(st, ['turn', 'phase', 'rack', 'ball']) };
   }
 
   /* ================= 2 vs 2 half court ================= */
@@ -187,7 +187,7 @@
       else if (ball.fly) {
         if (st.shot && st.shot.t < 0.35) { st.shot.t += dt; opps(st.shot.team).forEach((j) => { const q = P[j]; if (q.jump > 0.2 && Math.hypot(q.x - ball.x, q.z - ball.z) < 1.0 && ball.y < q.y + 2.9 && !st.shot.blk) { const ch = ctx.isHuman(j) ? 0.55 : 0.2 + ctx.D.grab * 0.3; st.shot.blk = 1; if (R() < ch) { ball.vx = (R() - 0.5) * 6; ball.vz = 3 + R() * 3; ball.vy = 1; st.shot = null; ctx.ev({ t: 'msg', b: 'BLOCKED!', s: ctx.players[j].name, d: 1000 }); ctx.ev({ t: 'fx', k: 'thud' }); VN.roar(0.6); if (ctx.isHuman(j)) ctx.stat(j, 'block'); } } }); }
         const r = stepBall(ball, dt, ctx.ev);
-        if (r === 'make' && st.shot) { const v = st.shot.three ? 2 : 1, t = st.shot.team; st.score[t] += v; P[st.shot.who].pts += v; ctx.ev({ t: 'fx', k: ball.rim ? 'cup' : 'swish' }); ctx.ev({ t: 'msg', b: st.shot.three ? 'FROM DOWNTOWN!' : 'BUCKET!', s: ctx.players[st.shot.who].name + ' +' + v, d: 1100 }); VN.roar(0.8); if (ctx.isHuman(st.shot.who)) ctx.stat(st.shot.who, 'bucket', v); st.phase = 'score'; st.t = 0; st.next = 1 - t; if (st.score[t] >= 11 || st.sudden) { st.over = true; setTimeout0(end); } upd(); return; }
+        if (r === 'make' && st.shot) { const v = st.shot.three ? 2 : 1, t = st.shot.team; st.score[t] += v; P[st.shot.who].pts += v; ctx.ev({ t: 'fx', k: ball.rim ? 'cup' : 'swish' }); ctx.ev({ t: 'msg', b: st.shot.three ? 'FROM DOWNTOWN!' : 'BUCKET!', s: ctx.players[st.shot.who].name + ' +' + v, d: 1100 }); VN.roar(0.8); if (ctx.isHuman(st.shot.who)) ctx.stat(st.shot.who, 'bucket', v); if (st.shot.three && ctx.isHuman(st.shot.who)) ctx.stat(st.shot.who, 'three'); st.phase = 'score'; st.t = 0; st.next = 1 - t; if (st.score[t] >= 11 || st.sudden) { st.over = true; setTimeout0(end); } upd(); return; }
         // rebound: grab when the ball comes down to reach
         if (ball.y < 2.6 && (!st.shot || ball.rim || ball.y < 2.0)) { let best = -1, bd = 1e9; P.forEach((p, i) => { const d = Math.hypot(ball.x - p.x, ball.z - p.z); if (d < 0.75 + (ctx.isHuman(i) && ctx.assist(i) ? 0.25 : 0) && d < bd) { bd = d; best = i; } }); if (best >= 0) { const was = st.off; ball.fly = false; ball.owner = best; st.shot = null; if (P[best].team !== was) { st.phase = 'turn'; st.t = 0; st.next = P[best].team; ctx.ev({ t: 'hint', b: 'Rebound ' + ctx.players[best].name, d: 700 }); } else { st.shotClock = 14; } } }
       }

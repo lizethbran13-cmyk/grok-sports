@@ -96,7 +96,7 @@
     }
     // screen pull vector -> world direction using the camera basis sent with the input
     function putt(i, sx, sy, pw, cam) {
-      const c = cam || basis(); let wx = c.rx * sx - c.fx * sy, wz = c.rz * sx - c.fz * sy; const l = Math.hypot(wx, wz) || 1; wx /= l; wz /= l;
+      const c = cam && isFinite(cam.rx) && isFinite(cam.rz) && isFinite(cam.fx) && isFinite(cam.fz) ? cam : basis(); let wx = c.rx * sx - c.fx * sy, wz = c.rz * sx - c.fz * sy; const l = Math.hypot(wx, wz) || 1; wx /= l; wz /= l;
       const b = balls[i], sp = 0.25 + pw * pw * MAXV; b.vx = wx * sp; b.vz = wz * sp; b.safe = [b.x, b.z]; st.cur[i]++; st.phase = 'roll'; st.t = 0;
       E.act(S.P[i], 'putt'); ctx.ev({ t: 'fx', k: 'thunk', a: 0.3 + pw * 0.5 }); upd();
     }
@@ -118,7 +118,7 @@
         const b = balls[st.turn]; let r = null; const sub = 4; for (let k = 0; k < sub && !r; k++) r = step(b, H, S0, st.simT + k * dt / sub, dt / sub);
         if (b.wall || b.bump) { ctx.ev({ t: 'fx', k: 'thud', a: 0.25 }); b.wall = b.bump = 0; }
         if (r === 'cup') { b.done = true; b.v = false; const c = st.cur[st.turn]; const nm = c === 1 ? 'HOLE IN ONE!' : c - H.par <= -2 ? 'EAGLE!' : c - H.par === -1 ? 'BIRDIE!' : c === H.par ? 'PAR' : c - H.par === 1 ? 'BOGEY' : '+' + (c - H.par);
-          ctx.ev({ t: 'fx', k: 'cup' }); ctx.ev({ t: 'msg', b: nm, s: ctx.players[st.turn].name, d: 1400 }); if (c <= H.par) ctx.ev({ t: 'party', x: H.cup[0], y: 1, z: H.cup[1], n: c === 1 ? 90 : 30 }); E.act(S.P[st.turn], c <= H.par ? 'cheer' : 'idle'); if (ctx.isHuman(st.turn)) { if (c === 1) ctx.stat(st.turn, 'ace'); if (c < H.par) ctx.stat(st.turn, 'birdie'); } st.phase = 'wait'; st.t = 0; return; }
+          ctx.ev({ t: 'fx', k: 'cup' }); ctx.ev({ t: 'msg', b: nm, s: ctx.players[st.turn].name, d: 1400 }); if (c <= H.par) ctx.ev({ t: 'party', x: H.cup[0], y: 1, z: H.cup[1], n: c === 1 ? 90 : 30 }); E.act(S.P[st.turn], c <= H.par ? 'cheer' : 'idle'); if (ctx.isHuman(st.turn)) { if (c === 1) ctx.stat(st.turn, 'ace'); if (c < H.par) ctx.stat(st.turn, 'birdie'); if (c <= H.par) ctx.stat(st.turn, 'par'); } st.phase = 'wait'; st.t = 0; return; }
         if (r === 'water') { ctx.ev({ t: 'fx', k: 'splash' }); ctx.ev({ t: 'burst', x: b.x, y: 0.1, z: b.z, c: '#7dd3fc', n: 16 }); ctx.ev({ t: 'msg', b: 'SPLASH!', s: '+1 stroke', d: 1100 }); st.cur[st.turn]++; b.x = b.safe[0]; b.z = b.safe[1]; b.lx = b.x; b.lz = b.z; b.vx = b.vz = 0; st.phase = 'wait'; st.t = 0; return; }
         if (Math.hypot(b.vx, b.vz) < 0.03 || st.t > 14) { b.vx = b.vz = 0; st.phase = 'wait'; st.t = 0; }
         upd(); return;
@@ -204,7 +204,9 @@
     }
     // guests: send the putt with the camera basis so the direction matches what they see
     function localInput(ev) { if (ev.k === 'down') st.aim = { dx: 0, dy: 0, pw: 0 }; else if (ev.k === 'drag' && st.aim) { st.aim.dx = ev.dx; st.aim.dy = ev.dy; st.aim.pw = U.clamp(Math.hypot(ev.dx, ev.dy) / 0.32, 0, 1); } else if (ev.k === 'up') st.aim = null; }
-    return { S, build, sim, input, view, cam, st, joy: false, balls, cpuPutt, putt, localInput, startHole, holes: HOLES, onX: (x) => { if (x.hole != null && x.hole !== st.hole) { st.hole = x.hole; H = HOLES[x.hole]; S0 = segs(H); drawHole(); } } };
+    const sync = { get: () => ({ ph: st.phase, tu: st.turn, mt: Math.round(st.simT * 100) / 100, cur: st.cur }), set: (v) => { st.phase = String(v.ph); st.turn = v.tu | 0; st.simT = +v.mt || 0; if (Array.isArray(v.cur)) st.cur = v.cur; } };
+    const prepInput = (ev) => { if (ev.k === 'up' || ev.k === 'putt') { const c = E.camBasis(); ev.cam = { rx: c.rx, rz: c.rz, fx: c.fx, fz: c.fz }; } return ev; };
+    return { S, build, sim, input, view, cam, st, joy: false, sync, prepInput, balls, cpuPutt, putt, localInput, startHole, holes: HOLES, onX: (x) => { if (x.hole != null && x.hole !== st.hole) { st.hole = x.hole; H = HOLES[x.hole]; S0 = segs(H); drawHole(); } } };
   };
   SP.Sports.golf.rec = { '9': { n: 'Best 9-hole score', low: true }, '3': { n: 'Best 3-hole score', low: true } };
 })();

@@ -161,10 +161,11 @@
     function view(dt) {
       E.syncModels(dt); balls.forEach((b, k) => { bms[k].position.set(b.x, b.y, b.z); if (b.live) bms[k].rotation.x += dt * 12; });
       const me = ctx.me, p = P[me]; mark.visible = !!p && !p.out; if (mark.visible) mark.position.set(p.x, p.y + 2.7 + Math.sin(V.t * 5) * 0.08, p.z);
-      const inc = p && !p.out && incoming(me); warn.visible = !!inc; if (inc) { warn.position.set(p.x, 0.04, p.z); const s = 0.7 + Math.sin(V.t * 20) * 0.15; warn.scale.setScalar(s); }
+      const inc = p && !p.out && (ctx.guest ? !!(st.warn && st.warn[me]) : incoming(me)); warn.visible = !!inc; if (inc) { warn.position.set(p.x, 0.04, p.z); const s = 0.7 + Math.sin(V.t * 20) * 0.15; warn.scale.setScalar(s); }
     }
     function cam(dt, snap) { const s = side(ctx.myTeam || 0); E.fov(58); const p = P[ctx.me]; const fx = p && !p.out ? p.x * 0.3 : 0; E.camLook(fx, 9.2, s * (HL + 5.2), fx * 0.5, 0, -s * 2.2, dt, 3, snap); }
-    return { S, build, sim, input, view, cam, st, balls, throwBall, pickTarget };
+    const sync = { get: () => ({ o: P.map((p) => p.out ? 1 : 0), w: P.map((p, i) => incoming(i) ? 1 : 0) }), set: (v) => { (v.o || []).forEach((k, i) => { if (P[i]) P[i].out = !!k; }); st.warn = v.w || []; } };
+    return { S, build, sim, input, view, cam, st, balls, throwBall, pickTarget, sync };
   };
   SP.Sports.dodgeball.rec = { '3v3': { n: 'Hits + catches in a match' } };
 })();

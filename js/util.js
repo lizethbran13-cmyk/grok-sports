@@ -20,6 +20,8 @@
   };
   U.fbm = (x, z, o) => { let s = 0, a = 1, f = 1, n = 0; for (let i = 0; i < (o || 3); i++) { s += U.noise(x * f + i * 17.3, z * f - i * 9.1) * a; n += a; a *= 0.5; f *= 2; } return s / n; };
   U.pick = (arr, r) => arr[Math.floor((r == null ? Math.random() : r) * arr.length) % arr.length];
+  U.pickKeys = (o, keys) => { const r = {}; keys.forEach((k) => { r[k] = o[k]; }); return r; };
+  U.syncer = (o, keys) => ({ get: () => U.pickKeys(o, keys), set: (v) => keys.forEach((k) => { if (k in v) o[k] = v[k]; }) });
   U.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   U.uid = () => Math.random().toString(36).slice(2, 9);
 

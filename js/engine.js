@@ -124,6 +124,7 @@
   };
   E.input = function (ev) {
     const ctx = E.ctx; if (!E.running || !ctx || E.over || E.paused) return;
+    if (E.sport.prepInput) ev = E.sport.prepInput(ev) || ev;
     if (ctx.guest) { SP.Net.sendInput(ev); if (E.sport.localInput) E.sport.localInput(ev); return; }
     if (ctx.me >= 0) E.sport.input(ctx.me, ev);
   };
@@ -153,6 +154,7 @@
     const S = E.S, A = SP.Pose.idx;
     const d = { t: 's', P: S.P.map((p) => [r2(p.x), r2(p.y), r2(p.z), r2(p.ry), A[p.a] | 0, r2(p.at), p.sd < 0 ? -1 : 1, (p.hid ? 1 : 0) | (p.notag ? 2 : 0), r2(p.pw)]), O: S.O.map((o) => [r2(o.x), r2(o.y), r2(o.z), r2(o.rx), r2(o.ry), r2(o.rz), o.v === false ? 0 : 1, r2(o.vx), r2(o.vy), r2(o.vz)]) };
     const hk = JSON.stringify(S.hud); if (hk !== E._sh) { E._sh = hk; d.h = S.hud; }
+    if (E.sport && E.sport.sync) S.x._s = E.sport.sync.get();
     const xk = JSON.stringify(S.x); if (xk !== E._sx || (E._sxT = (E._sxT || 0) + 1) % 30 === 0) { E._sx = xk; d.x = S.x; }
     if (E.evq.length) { d.e = E.evq.slice(0, 40); E.evq = []; }
     return d;
@@ -163,7 +165,7 @@
     (d.P || []).forEach((q, i) => { let p = S.P[i]; if (!p) p = S.P[i] = { x: 0, y: 0, z: 0, ry: 0 }; if (!Array.isArray(q)) return; p.tx = +q[0] || 0; p.ty = +q[1] || 0; p.tz = +q[2] || 0; p.try = +q[3] || 0; const a = A[q[4] | 0] || 'idle'; if (a !== p.a || +q[5] < (p.at || 0) - 0.2) { p.a = a; p.at = +q[5] || 0; } p.sd = q[6] < 0 ? -1 : 1; p.hid = !!(q[7] & 1); p.notag = !!(q[7] & 2); p.pw = +q[8] || 0; if (p.x == null || p._init == null) { p.x = p.tx; p.y = p.ty; p.z = p.tz; p.ry = p.try; p._init = 1; } });
     (d.O || []).forEach((q, i) => { let o = S.O[i]; if (!o) o = S.O[i] = {}; if (!Array.isArray(q)) return; o.tx = +q[0] || 0; o.ty = +q[1] || 0; o.tz = +q[2] || 0; o.rx = +q[3] || 0; o.ry = +q[4] || 0; o.rz = +q[5] || 0; o.v = !!q[6]; o.vx = +q[7] || 0; o.vy = +q[8] || 0; o.vz = +q[9] || 0; o.age = 0; const jump = o.x == null || Math.hypot(o.tx - o.x, o.ty - o.y, o.tz - o.z) > 4; if (jump) { o.x = o.tx; o.y = o.ty; o.z = o.tz; } });
     if (d.h && typeof d.h === 'object') S.hud = d.h;
-    if (d.x && typeof d.x === 'object') { S.x = d.x; if (E.sport.onX) E.sport.onX(d.x); }
+    if (d.x && typeof d.x === 'object') { S.x = d.x; if (E.sport.sync && d.x._s && typeof d.x._s === 'object') { try { E.sport.sync.set(d.x._s); } catch (err) { /* ignore bad snapshot */ } } if (E.sport.onX) E.sport.onX(d.x); }
     (Array.isArray(d.e) ? d.e : []).forEach((e) => { if (e && typeof e.t === 'string') E.play(e); });
   };
   E.interp = function (dt) {
