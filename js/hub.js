@@ -289,7 +289,7 @@
     let cx, cz, lx, lz;
     if (H.area === 'plaza') { const r = Math.hypot(p.x, p.z); let ox = r > 4 ? p.x / r : Math.sin(H.camA || 0), oz = r > 4 ? p.z / r : Math.cos(H.camA || Math.PI); if (r <= 4) { ox = 0; oz = -1; } H.camA = Math.atan2(ox, oz);
       cx = p.x - ox * 9.5; cz = p.z - oz * 9.5; lx = p.x + ox * 7; lz = p.z + oz * 7; E_cam(cx, 6.8, cz, lx, 2.2, lz, dt, H.camSnap); }
-    else { const rm = ROOMS[H.area]; cx = U.clamp(p.x, rm.x - rm.w / 2 + 2, rm.x + rm.w / 2 - 2); cz = Math.min(p.z + 6, rm.z + rm.d / 2 - 0.4); E_cam(cx, 4.2, cz, p.x, 1.2, p.z - 2, dt, H.camSnap); }
+    else { const rm = ROOMS[H.area]; cx = U.clamp(p.x, rm.x - rm.w / 2 + 2, rm.x + rm.w / 2 - 2); cz = Math.min(p.z + 6, rm.z + rm.d / 2 - 0.4); E_cam(cx, 5.4, cz, p.x, 0.9, p.z - 4, dt, H.camSnap); }
     H.camSnap = false;
   };
   function E_cam(px, py, pz, tx, ty, tz, dt, snap) { SP.E.fov(58); SP.E.camLook(px, py, pz, tx, ty, tz, dt, 6, snap); }
