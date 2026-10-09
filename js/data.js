@@ -46,7 +46,7 @@
       how: ['Run over a ball to pick it up.', 'SWIPE toward someone to throw. It locks on to the closest player.', 'Got hit before the ball bounced? You\u2019re OUT.', 'TAP right when a ball reaches you to CATCH it: the thrower is out and a teammate comes back!', 'TAP with no ball coming to dodge-hop.'] },
     { id: 'archery', n: 'Archery', icon: '🏹', col: '#eab308', tool: 'bow', music: 'park', bonus: true,
       modes: [{ id: 'match', n: 'Target Match', turns: true, desc: '3 ends x 3 arrows at 18 m, 30 m and 50 m.' }],
-      how: ['Put your finger down and PULL DOWN to draw the bow.', 'While holding, slide to aim. The sight wobbles a little!', 'Let go to shoot.', 'Watch the wind flag. Aim a little into the wind.', 'Bullseye = 10 points. Most points wins.'] },
+      how: ['HOLD your finger down to draw the bow (fill the meter).', 'While holding, slide to aim the green sight. It wobbles a little!', 'Let go to shoot. Hold too long and your arms get tired!', 'Watch the wind flag. Aim a little into the wind.', 'Bullseye = 10 points. Most points wins.'] },
     { id: 'tabletennis', n: 'Table Tennis', icon: '🏓', col: '#e11d48', tool: 'tt', music: 'arena', bonus: true,
       modes: [{ id: 'singles', n: 'Singles', team: 1, desc: 'First to 11, win by 2.' }, { id: 'doubles', n: 'Doubles', team: 2, desc: '2 vs 2, first to 11.' }],
       how: ['Fast and twitchy! You slide left and right automatically in Assist.', 'SWIPE UP to hit. Swipe left/right to aim.', 'The ball must bounce once on the other side.', 'Swipe hard for a fast drive, short for a soft push.', 'First to 11, win by 2.'] }
