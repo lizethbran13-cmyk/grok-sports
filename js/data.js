@@ -36,7 +36,7 @@
       modes: [{ id: '2v2', n: 'Beach 2 vs 2', team: 2, desc: 'Rally to 11, win by 2.' }],
       how: ['Your team gets 3 touches: bump, set, spike!', 'TAP when the ball comes to you to bump or set it.', 'At the net: SWIPE DOWN to spike. Swipe left/right to aim.', 'Serve: SWIPE UP. Don\u2019t let the ball land on your side!', 'Every rally is a point. First to 11, win by 2.'] },
     { id: 'golf', n: 'Mini Golf', icon: '⛳', col: '#22c55e', tool: 'putter', music: 'park',
-      modes: [{ id: '9', n: '9 Holes', turns: true, desc: 'Grok Putt Park, par 21.' }, { id: '3', n: 'Quick 3 Holes', turns: true, desc: 'The first 3 holes.' }],
+      modes: [{ id: '9', n: '9 Holes', turns: true, desc: 'Grok Putt Park, par 23.' }, { id: '3', n: 'Quick 3 Holes', turns: true, desc: 'The first 3 holes (par 7).' }],
       how: ['Pull BACK from anywhere on the screen like a slingshot.', 'Longer pull = harder putt. Let go to putt.', 'The dotted line shows where you aim (Assist shows the bounces).', 'Watch out for the windmill, bumpers, slopes and water!', 'Fewest strokes wins. Max 6 strokes per hole.'] },
     { id: 'badminton', n: 'Badminton', icon: '🏸', col: '#06b6d4', tool: 'badminton', music: 'arena',
       modes: [{ id: 'singles', n: 'Singles', team: 1, desc: 'Rally to 11, win by 2.' }, { id: 'doubles', n: 'Doubles', team: 2, desc: '2 vs 2, rally to 11.' }],
