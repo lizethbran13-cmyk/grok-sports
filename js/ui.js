@@ -30,7 +30,7 @@
   /* ---------- HUD ---------- */
   UI.hud = function (on, sp) {
     UI.show('hud', on); UI.show('hubHud', false);
-    if (!on) { UI.show('meter', false); return; }
+    if (!on) { UI.show('meter', false); UI.show('card', false); document.body.classList.remove('card'); return; }
     $('assistTag').classList.toggle('off', !G().save.opts.assist); $('assistTag').textContent = G().save.opts.assist ? '🛟 ASSIST ON' : '🛟 ASSIST OFF';
     $('msg').classList.remove('show'); $('hint').classList.remove('show');
   };
@@ -43,6 +43,11 @@
     const m = h.meter; UI.show('meter', !!m);
     if (m) { $('meterZone').style.bottom = (m.lo * 100) + '%'; $('meterZone').style.height = ((m.hi - m.lo) * 100) + '%'; $('meterFill').style.height = (U.clamp(m.v, 0, 1) * 100) + '%'; $('meterMark').style.bottom = (U.clamp(m.v, 0, 1) * 100) + '%'; $('meterZone').style.display = m.hi > m.lo ? '' : 'none'; }
     UI.show('joyHint', !!h.joy);
+    const cd = $('card'); UI.show('card', !!h.card); document.body.classList.toggle('card', !!h.card);
+    if (h.card) { const key = JSON.stringify(h.card); if (cd._k !== key) { cd._k = key; const c = h.card; cd.classList.toggle('full', c.n > 5);
+      let html = '<table><tr><td class="nm">FRAME</td>' + Array.from({ length: c.n }, (_, f) => '<td' + (f === c.f ? ' class="cur"' : '') + '>' + (f + 1) + '</td>').join('') + '<td class="tot">TOT</td></tr>';
+      c.rows.forEach((r, ri) => { html += '<tr' + (ri === c.on ? ' class="on"' : '') + '><td class="nm">' + U.esc(r.name) + '</td>' + Array.from({ length: c.n }, (_, f) => '<td' + (ri === c.on && f === c.f ? ' class="cur"' : '') + '><span class="mk">' + U.esc((r.m[f] || []).join(' ') || '\u00a0') + '</span><span class="cm">' + (r.c[f] != null ? r.c[f] : '\u00a0') + '</span></td>').join('') + '<td class="tot">' + r.t + '</td></tr>'; });
+      cd.innerHTML = html + '</table>'; document.body.style.setProperty('--cardH', (cd.offsetHeight + 6) + 'px'); } }
   };
 
   /* ---------- how to play ---------- */

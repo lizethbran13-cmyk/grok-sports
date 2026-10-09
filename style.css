@@ -152,3 +152,16 @@ input { font-family: inherit; font-weight: 800; font-size: 19px; padding: 10px 1
 .howcard .icon { font-size: 54px; }
 .bowlTbl { font-size: 11px; } .bowlTbl td { padding: 2px 3px; text-align: center; }
 @media (min-width: 800px) and (min-height: 500px) { #board .tm { min-width: 140px; } #board .nm { font-size: 14px; max-width: 110px; } }
+
+/* bowling scorecard */
+#card { position: absolute; top: calc(62px + var(--st)); left: 50%; transform: translateX(-50%); background: rgba(15,12,40,.88); border: 2px solid #a78bfa; border-radius: 10px; padding: 3px; font-size: 10px; color: #fff; box-shadow: 0 0 12px rgba(167,139,250,.55); }
+#card table { border-collapse: collapse; }
+#card td { border: 1px solid #4c3f8f; text-align: center; padding: 0; min-width: 22px; height: 13px; line-height: 13px; }
+#card td.nm { min-width: 38px; max-width: 46px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 3px; color: #ffe14d; font-weight: 900; text-align: left; }
+#card td.cur { background: rgba(255,225,77,.22); }
+#card td.tot { min-width: 28px; color: #22d3ee; font-weight: 900; font-size: 12px; }
+#card .mk { display: block; font-weight: 900; color: #f0abfc; letter-spacing: 1px; }
+#card .cm { display: block; color: #fff; font-weight: 800; }
+#card tr.on td.nm { color: #4ade80; }
+#card.full td { min-width: 18px; } #card.full td.nm { min-width: 30px; max-width: 36px; }
+body.card #hudL { top: calc(62px + var(--st) + var(--cardH, 52px)); }

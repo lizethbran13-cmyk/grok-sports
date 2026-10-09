@@ -58,7 +58,8 @@
     function upd() { const h = S.hud, me = st.turn, fd = frameDone(st.rolls[me], N); h.solo = n !== 2; const sc = (i) => score(st.rolls[i], N).total;
       if (n === 2) { h.l = ctx.players[0].name; h.r = ctx.players[1].name; h.ls = sc(0); h.rs = sc(1); } else { h.l = ctx.players[me].name; h.ls = sc(me); h.r = ''; h.rs = ''; }
       h.mid = 'FRAME ' + Math.min(N, (fd.frame || 0) + 1) + '/' + N + (fd.ball ? ' · BALL ' + (fd.ball + 1) : '');
-      h.turn = '🎳 ' + ctx.players[me].name + ': ' + sheet(me);
+      h.turn = '';
+      h.card = { n: N, f: Math.min(N - 1, fd.done ? N - 1 : fd.frame || 0), on: me, rows: ctx.players.map((p, i) => { const s = score(st.rolls[i], N); return { name: p.name, m: s.marks, c: s.cum, t: s.total }; }) };
       h.tip = me === ctx.me && st.phase === 'aim' ? 'Drag ↔ to move · SWIPE UP to roll · curve it for spin' : ''; S.x.sheet = ctx.players.map((p, i) => [p.name, score(st.rolls[i], N)]); }
     function input(i, ev) {
       if (i !== st.turn || st.phase !== 'aim') return;
@@ -147,26 +148,67 @@
       ctx.end({ win, title: win < 0 ? "It's a tie!" : ctx.players[w[0]].name + ' wins with ' + mx + '!', lines: ctx.players.map((p, i) => p.name + ': ' + sheet(i)), score: score2 });
     }
     /* ---- view ---- */
-    let bm, pms = [], arrow;
-    function build() {
-      V.env(VN.ENV.night);
-      const b = new M.B(); const lanes = [-3.6, -1.8, 0, 1.8, 3.6];
-      lanes.forEach((lx, li) => { b.box(LW, 0.06, LL + 3, 0, li === 2 ? '#e8b980' : '#d6a46c', lx, -0.03, -LL / 2 - 0.6, 0, 0, 0, 'gloss'); [-1, 1].forEach((s) => { b.cyl(GUT / 2, GUT / 2, LL + 2, '#475569', lx + s * (LW / 2 + GUT / 2), -0.1, -LL / 2 - 0.4, Math.PI / 2, 0, 0, null, 10); b.box(0.08, 0.2, LL + 3, 0.02, '#1e293b', lx + s * (LW / 2 + GUT + 0.04), 0.07, -LL / 2 - 0.6); });
-        for (let a = 0; a < 7; a++) { const ax = (a - 3) * LW / 8; b.cyl(0, 0.035, 0.12, '#7c2d12', lx + ax, 0.002, -4.6 - Math.abs(a - 3) * 0.3, -Math.PI / 2, 0, 0, null, 3); }
-        b.box(LW, 0.012, 0.03, 0, '#ef4444', lx, 0.005, 0); for (let a = 0; a < 5; a++) b.sph(0.025, '#1e293b', lx + (a - 2) * 0.2, 0.0, -2.1, 1, 0.2, 1);
+    let bm, pms = [], arrow, neon, npcs = [], npcT = 0;
+    function alley() {
+      V.env(VN.ENV.night); V.world.fog = new T.Fog('#120c2e', 30, 70);
+      const b = new M.B(), lanes = [-3.6, -1.8, 0, 1.8, 3.6], lo = M.low;
+      lanes.forEach((lx, li) => {
+        // maple approach + pine lane: individual boards with alternating tones
+        const nb = lo ? 13 : 39, bw = LW / nb;
+        for (let k = 0; k < nb; k++) { const tone = M.shift(li === 2 ? '#e9c08a' : '#dcb07a', 0, 0, (U.hash(k, li) - 0.5) * 0.07); b.box(bw - 0.002, 0.06, LL + 1.0, 0, tone, lx - LW / 2 + (k + 0.5) * bw, -0.03, -LL / 2 - 0.3, 0, 0, 0, 'gloss'); }
+        b.box(LW, 0.06, 4.6, 0, '#f1d3a1', lx, -0.031, 2.0, 0, 0, 0, 'gloss');                           // approach
+        b.box(LW, 0.015, 0.035, 0, '#dc2626', lx, 0.004, 0);                                              // foul line
+        [-1, 1].forEach((sd) => { b.cyl(GUT / 2, GUT / 2, LL + 2, '#64748b', lx + sd * (LW / 2 + GUT / 2), -0.1, -LL / 2 - 0.4, Math.PI / 2, 0, 0, 'gloss', 12);
+          b.box(0.1, 0.16, LL + 6, 0.03, '#1e1b4b', lx + sd * (LW / 2 + GUT + 0.05), 0.06, -LL / 2 + 1.5);
+          if (!lo) for (let q = 0; q < 7; q++) b.box(0.04, 0.02, 0.5, 0.01, li % 2 ? '#22d3ee' : '#f472b6', lx + sd * (LW / 2 + GUT + 0.05), 0.15, -2 - q * 2.4, 0, 0, 0, 'glow'); });
+        for (let a = 0; a < 7; a++) { const ax = (a - 3) * LW / 8, az = -4.6 - Math.abs(a - 3) * 0.3; b.geo(new T.ConeGeometry(0.035, 0.14, 3), '#7c2d12', lx + ax, 0.004, az, -Math.PI / 2, 0, 0, 1, 0.15, 1); }
+        for (let a = 0; a < 5; a++) b.sph(0.02, '#3b2412', lx + (a - 2) * 0.2, 0.0, -2.1, 1, 0.25, 1);
+        // pin deck + pit + pinsetter / masking unit with neon trim
+        b.box(LW + 0.5, 0.06, 1.4, 0, '#f5e1bd', lx, -0.03, -LL - 0.5, 0, 0, 0, 'gloss'); b.box(LW + 0.6, 0.3, 1.0, 0, '#0b0a1a', lx, -0.2, -LL - 1.7);
+        b.box(LW + 0.6, 1.1, 0.5, 0.05, '#1e1b4b', lx, 1.75, -LL - 0.65); b.box(LW + 0.62, 0.06, 0.52, 0.02, li % 2 ? '#22d3ee' : '#f472b6', lx, 1.2, -LL - 0.65, 0, 0, 0, 'glow');
+        b.box(LW + 0.4, 0.04, 0.06, 0.01, '#94a3b8', lx, 0.12, -LL - 1.25, 0, 0, 0, 'gloss');             // sweep bar
+        b.box(LW + 0.3, 1.2, 1.4, 0.06, '#334155', lx, 2.7, -LL - 1.6); for (let g = 0; g < 3; g++) b.cyl(0.25, 0.25, 0.1, '#475569', lx - 0.35 + g * 0.35, 2.2, -LL - 1.0, Math.PI / 2, 0, 0, null, 12);
+        if (li !== 2) for (const p of PIN0) b.geo(new T.CylinderGeometry(0.03, 0.055, 0.38, 8), '#f8fafc', lx + p.x, 0.19, p.z, 0, 0, 0, 1, 1, 1, 'gloss');
+        // ball return between lanes + lane number
+        if (li < 4) { const rx = lx + 0.9; b.box(0.34, 0.5, 1.6, 0.14, '#5b21b6', rx, 0.25, 2.6, 0, 0, 0, 'gloss'); b.box(0.36, 0.12, 1.4, 0.05, '#c4b5fd', rx, 0.55, 2.6, 0, 0, 0, 'gloss'); b.box(0.46, 0.7, 0.46, 0.18, '#7c3aed', rx, 0.35, 3.5, 0, 0, 0, 'gloss');
+          ['#22d3ee', '#f472b6', '#facc15', '#4ade80'].forEach((c, q) => b.sph(0.105, c, rx + (q % 2 ? 0.08 : -0.08), 0.68, 2.0 + q * 0.32, 1, 1, 1, 0, 0, 0, 'gloss')); }
       });
-      b.box(10, 0.05, 6, 0, '#334155', 0, -0.05, 3.5); b.box(10, 1.6, 0.6, 0.05, '#0f172a', 0, 0.8, -LL - 1.9); b.box(10, 0.6, 1.4, 0.05, '#7c3aed', 0, 1.9, -LL - 1.1, 0, 0, 0, 'gloss');
-      for (let i = 0; i < 6; i++) b.box(0.2, 3, 0.4, 0.05, '#1e1b4b', -4.5 + i * 1.8, 1.5, -LL - 1.5);
-      // ball return + rack
-      b.box(0.5, 0.5, 1.2, 0.15, '#7c3aed', 0.95, 0.25, 2.2, 0, 0, 0, 'gloss'); b.sph(0.11, '#22d3ee', 0.95, 0.6, 2.0, 1, 1, 1, 0, 0, 0, 'gloss'); b.sph(0.11, '#f472b6', 0.95, 0.6, 2.35, 1, 1, 1, 0, 0, 0, 'gloss');
-      // side walls with neon stripes
-      [-1, 1].forEach((s) => { b.box(0.3, 5, LL + 10, 0.05, '#1e1b4b', s * 5.2, 2.5, -LL / 2); b.box(0.32, 0.12, LL + 10, 0.05, s > 0 ? '#22d3ee' : '#f472b6', s * 5.15, 3.2, -LL / 2, 0, 0, 0, 'glow'); b.box(0.32, 0.12, LL + 10, 0.05, '#facc15', s * 5.15, 1.2, -LL / 2, 0, 0, 0, 'glow'); });
-      b.box(10.6, 0.3, LL + 10, 0, '#110d2e', 0, 5, -LL / 2);
-      for (let i = 0; i < 8; i++) b.cyl(0.3, 0.3, 0.06, '#fffbe6', (i % 2 ? 1.8 : -1.8), 4.82, -2 - i * 2.4, 0, 0, 0, 'glow', 12);
-      // seats + scorer table behind
-      for (let i = 0; i < 4; i++) b.box(0.9, 0.45, 0.6, 0.15, ['#f472b6', '#22d3ee', '#facc15', '#a78bfa'][i], -2.5 + i * 1.6 - 0.8, 0.22, 5.2, 0, 0, 0, 'gloss');
+      // masking wall above all pins + side walls + ceiling
+      b.box(10.6, 2.4, 0.3, 0.05, '#140f33', 0, 3.4, -LL - 0.95); b.box(10.6, 0.1, 0.32, 0.03, '#facc15', 0, 2.25, -LL - 0.95, 0, 0, 0, 'glow'); b.box(10.6, 0.1, 0.32, 0.03, '#22d3ee', 0, 4.55, -LL - 0.95, 0, 0, 0, 'glow');
+      [-1, 1].forEach((sd) => { b.box(0.3, 5.2, LL + 14, 0.05, '#1e1b4b', sd * 5.3, 2.6, -LL / 2 + 1); b.box(0.32, 0.12, LL + 14, 0.05, sd > 0 ? '#22d3ee' : '#f472b6', sd * 5.15, 3.3, -LL / 2 + 1, 0, 0, 0, 'glow'); b.box(0.32, 0.12, LL + 14, 0.05, '#facc15', sd * 5.15, 1.2, -LL / 2 + 1, 0, 0, 0, 'glow');
+        for (let q = 0; q < 6; q++) { const sh = new T.Shape(); sh.moveTo(0, 0); sh.lineTo(0.5, 0.9); sh.lineTo(1.0, 0); sh.lineTo(0, 0); b.geo(new T.ExtrudeGeometry(sh, { depth: 0.04, bevelEnabled: false }), ['#f472b6', '#22d3ee', '#facc15', '#a78bfa'][q % 4], sd * 5.12, 2.0, -1 - q * 3, 0, sd * Math.PI / 2, 0, 1, 1, 1, 'glow'); } });
+      b.box(10.8, 0.3, LL + 14, 0, '#0d0a24', 0, 5.2, -LL / 2 + 1);
+      for (let i = 0; i < 10; i++) [-2.7, 0, 2.7].forEach((x) => b.cyl(0.28, 0.28, 0.05, '#fffbe6', x, 5.03, 3 - i * 2.4, 0, 0, 0, 'glow', 12));
+      for (let i = 0; i < 9; i++) b.sph(0.12, ['#f472b6', '#22d3ee', '#facc15'][i % 3], -4.8 + i * 1.2, 4.9, -LL + 2, 1, 1, 1, 0, 0, 0, 'glow', 8, 6);
+      // settee area, scoring consoles, overhead monitors, carpet
+      b.box(11, 0.05, 6, 0, '#2e1065', 0, -0.05, 6.2); for (let i = 0; i < 40; i++) b.box(0.18, 0.006, 0.18, 0, ['#f472b6', '#22d3ee', '#facc15'][i % 3], -5 + U.hash(i, 1) * 10, -0.02, 3.6 + U.hash(i, 2) * 5);
+      lanes.forEach((lx, li) => { if (li % 2) return; b.box(2.6, 0.45, 0.7, 0.18, ['#f472b6', '#22d3ee', '#facc15'][li / 2], lx, 0.3, 6.6, 0, 0, 0, 'gloss'); b.box(2.6, 0.7, 0.2, 0.08, M.darker(['#f472b6', '#22d3ee', '#facc15'][li / 2], 0.2), lx, 0.75, 6.95); b.box(0.5, 0.75, 0.4, 0.08, '#334155', lx + 0.9, 0.38, 5.4); b.box(0.45, 0.3, 0.06, 0.02, '#38bdf8', lx + 0.9, 0.85, 5.3, -0.4, 0, 0, 'glow'); });
+      lanes.forEach((lx) => { b.box(1.3, 0.75, 0.08, 0.03, '#111827', lx, 3.6, 0.6); b.cyl(0.03, 0.03, 1.2, '#64748b', lx, 4.5, 0.6, 0, 0, 0, null, 6); });
       VN.add(b.group(true));
-      const sc = VN.jumbo(0, 3.6, -LL - 1.0, 0, 3.6, 1.6); void sc;
+      // neon scoreboard above the pins (live scorecard)
+      neon = V.board(6.2, 1.7, 1024); neon.position.set(0, 3.4, -LL - 0.78); V.world.add(neon);
+      const sg = V.sign('GROK BOWL', 3.4, 0.8, '#140f33', '#f0abfc'); if (sg) { sg.position.set(0, 4.85, -LL - 0.75); V.world.add(sg); }
+      // other bowlers on the side lanes
+      [-3.6, -1.8, 1.8, 3.6].forEach((lx, k) => { const lk = D.aiLook(40 + k); lk.tool = 'none'; const m = M.athlete(lk); if (!M.low) M.outline(m); m.position.set(lx + 0.2, 0, 1.1 + (k % 2) * 0.6); m.rotation.y = Math.PI; V.world.add(m); const bb = M.sportBall('bowl', BR); bb.position.set(0.28, 0.75, 0.12); m.add(bb); npcs.push({ m, a: 'idle', at: 0 }); });
+      // a few spectators on the settees
+      M.low || [-3.6, 0, 3.6].forEach((lx, k) => { const lk = D.aiLook(60 + k); lk.tool = 'none'; const m = M.athlete(lk); m.position.set(lx - 0.5, 0.25, 6.5); m.rotation.y = Math.PI; m.scale.setScalar(0.95); V.world.add(m); npcs.push({ m, a: 'cheer', at: 0, sit: 1 }); });
+    }
+    function drawNeon() {
+      if (!neon) return; const c = S.hud.card; if (!c) return;
+      neon.userData.draw(JSON.stringify(c), (x, W, H) => {
+        x.fillStyle = '#0b0820'; x.fillRect(0, 0, W, H); x.strokeStyle = '#f472b6'; x.lineWidth = 6; x.shadowColor = '#f472b6'; x.shadowBlur = 18; x.strokeRect(8, 8, W - 16, H - 16); x.shadowBlur = 0;
+        const rows = c.rows.slice(0, 3), top = 30, rh = (H - top - 24) / (rows.length + 0.5), nw = 150, fw = (W - nw - 130 - 30) / c.n;
+        x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 22px Arial'; x.fillStyle = '#22d3ee';
+        for (let f = 0; f < c.n; f++) x.fillText(String(f + 1), 15 + nw + fw * (f + 0.5), top + rh * 0.25);
+        x.fillText('TOTAL', W - 15 - 65, top + rh * 0.25);
+        rows.forEach((r, ri) => { const y = top + rh * (ri + 0.5); x.fillStyle = ri === c.on ? 'rgba(255,225,77,.18)' : 'rgba(255,255,255,.04)'; x.fillRect(15, y, W - 30, rh - 6);
+          x.textAlign = 'left'; x.fillStyle = ri === c.on ? '#ffe14d' : '#e9d5ff'; x.font = '900 26px Arial'; x.fillText(String(r.name).slice(0, 9), 24, y + rh * 0.45); x.textAlign = 'center';
+          for (let f = 0; f < c.n; f++) { const cx = 15 + nw + fw * (f + 0.5); x.strokeStyle = '#6d28d9'; x.lineWidth = 2; x.strokeRect(15 + nw + fw * f, y, fw, rh - 6); x.fillStyle = '#f0abfc'; x.font = '900 24px Arial'; x.fillText((r.m[f] || []).join(' '), cx, y + rh * 0.28); x.fillStyle = '#fff'; x.font = '800 24px Arial'; if (r.c[f] != null) x.fillText(String(r.c[f]), cx, y + rh * 0.66); }
+          x.fillStyle = '#4ade80'; x.font = '900 40px Arial'; x.fillText(String(r.t), W - 15 - 65, y + rh * 0.45); });
+      });
+    }
+    function build() {
+      alley();
       E.makeModels('none', { tags: false, ring: false });
       bm = M.sportBall('bowl', BR); V.world.add(bm); bm.traverse((m) => { if (m.isMesh) m.castShadow = true; });
       pins.forEach(() => { const m = M.pin(); V.world.add(m); pms.push(m); });
@@ -177,7 +219,7 @@
       E.syncModels(dt); bm.position.set(ball.x, ball.gut ? BR * 0.4 : BR, ball.z); bm.rotation.x = ball.rx || 0; bm.visible = ball.z > -LL - 1.7;
       pins.forEach((p, i) => { const m = pms[i]; m.visible = p.v; if (!p.v) return; m.position.set(p.x, 0, p.z); m.rotation.set(0, 0, 0); if (p.tilt > 0) { m.rotation.order = 'YXZ'; m.rotation.y = p.fall || 0; m.rotation.x = -p.tilt; m.position.y = Math.sin(p.tilt) * 0.06; } });
       arrow.visible = st.phase === 'aim' && st.turn === ctx.me; if (arrow.visible) arrow.position.set(ball.x, 0.05, ball.z - 0.6 - Math.abs(Math.sin(V.t * 3)) * 0.2);
-      const fd = S.x.sheet; if (fd && VN.boards) { const me = st.turn; VN.drawScore('GROK BOWL', fd[0] ? fd[0][1].total : 0, fd[1] ? fd[1][1].total : '', fd[0] ? fd[0][0] : '', fd[1] ? fd[1][0] : '', 'Frame ' + Math.min(N, (frameDone(st.rolls[me] || [], N).frame || 0) + 1)); }
+      drawNeon(); npcT += dt; npcs.forEach((q, k) => { const ph = (npcT + k * 2.3) % 7; if (!q.sit && ph < 0.05 && q.a !== 'bowl') { q.a = 'bowl'; q.at = 0; } q.at += dt; if (q.a === 'bowl' && q.at > 1.2) { q.a = 'idle'; q.at = 0; } SP.Pose.apply(q.m, dt, { a: q.a, at: q.at, sd: 1, sp: 0 }, V.t + k); });
     }
     function cam(dt, snap) {
       E.fov(52);
