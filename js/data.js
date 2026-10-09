@@ -8,10 +8,10 @@
   // shared CPU skill levels. react = seconds before moving, speed = run multiplier, aim = aim error (m),
   // err = chance of a mistake per shot, power = shot power, smart = picks good targets, grab = catch/save/dig chance
   D.DIFF = {
-    easy:   { n: 'Easy',   react: 0.42, speed: 0.78, aim: 1.0,  err: 0.16,  power: 0.78, smart: 0.25, grab: 0.35, reach: 0.95 },
+    easy:   { n: 'Easy',   react: 0.45, speed: 0.74, aim: 1.1,  err: 0.24,  power: 0.78, smart: 0.25, grab: 0.35, reach: 0.95 },
     normal: { n: 'Normal', react: 0.3,  speed: 0.88, aim: 0.65, err: 0.1,   power: 0.88, smart: 0.5,  grab: 0.55, reach: 1.0 },
     hard:   { n: 'Hard',   react: 0.22, speed: 0.96, aim: 0.42, err: 0.065, power: 0.95, smart: 0.72, grab: 0.7,  reach: 1.04 },
-    pro:    { n: 'Pro',    react: 0.16, speed: 1.03, aim: 0.26, err: 0.04,  power: 1.0,  smart: 0.88, grab: 0.82, reach: 1.08 }
+    pro:    { n: 'Pro',    react: 0.17, speed: 1.02, aim: 0.3,  err: 0.05,  power: 1.0,  smart: 0.88, grab: 0.82, reach: 1.08 }
   };
   D.DIFF_ORDER = ['easy', 'normal', 'hard', 'pro'];
   D.AI_NAMES = ['Ace Ava', 'Bounce Bo', 'Captain Kip', 'Dash Dee', 'Fast Fiona', 'Goal Gus', 'Hoops Hana', 'Jumpy Jay', 'Kicker Kai', 'Lucky Lou', 'Max Power', 'Nifty Nia', 'Pinball Pat', 'Rally Rae', 'Slam Sam', 'Zippy Zoe'];

@@ -82,7 +82,7 @@
         ctx.ev({ t: 'fx', k: type === 'smash' ? 'smash' : C.sfx, a: U.clamp(spd / (C.smash), 0.2, 1) });
         if (type === 'smash') { ctx.ev({ t: 'shake', k: 0.15, d: 0.2 }); ctx.ev({ t: 'burst', x: ball.x, y: ball.y, z: ball.z, c: '#fff59d', n: 10 }); }
         st.phase = 'rally'; S.hud.tip = '';
-        S.P.forEach((q) => { q.ai.plan = null; q.ai.react = diffOf(0).react * (0.7 + ctx.rng() * 0.6); });
+        S.P.forEach((q, j) => { q.ai.plan = null; q.ai.react = ctx.isHuman(j) ? 0.45 : diffOf(0).react * (0.7 + ctx.rng() * 0.6); });
       }
       /* ---------- eligibility / prediction ---------- */
       function canHit(i) {
@@ -210,10 +210,12 @@
       function humanHit(i, b) {
         const p = S.P[i], d = distB(i), reach = reachOf(i), as = ctx.assist(i);
         const q = U.clamp(1 - Math.max(0, d - reach * 0.45) / (reach * 0.6), 0, 1) * (b.t > 0.3 ? 0.85 : 1);
-        let err = (1 - q) * (as ? 0.5 : 1.1) * (C.tt ? 0.25 : C.noBounce ? 0.6 : 1) + (C.tt ? 0.04 : 0.15);
+        const inSpd = Math.hypot(ball.vx, ball.vy, ball.vz) / C.drive, scale = C.tt ? 0.25 : C.noBounce ? 0.6 : 1;
+        let err = ((1 - q) * (as ? 0.6 : 1.1) + 0.2 + Math.max(0, inSpd - 0.6) * 0.5 + (d > reach * 0.8 ? 0.35 : 0)) * scale;
+        if (ctx.rng() < (0.03 + Math.max(0, inSpd - 0.7) * 0.12 + (d > reach * 0.8 ? 0.08 : 0)) * (as ? 0.7 : 1)) { const k = ctx.rng(); hit(i, b.type === 'smash' ? 'smash' : 'drive', k < 0.5 ? Math.sign(b.aim || 1) * 1.3 : b.aim || 0, k < 0.5 ? 0.6 : 1.2, b.pow || 0.6, err, k < 0.25); return; }
         let type = b.type, aim = b.aim, depth = b.depth, pow = b.pow;
         const high = ball.y - Y0 > (C.tt ? 0.35 : C.noBounce ? 2.0 : 2.1);
-        if (type === 'auto') { const o = smartAim(i); aim = o.aim; depth = o.depth; pow = 0.65; type = high && Math.abs(ball.z) < HL * 0.75 ? 'smash' : 'drive'; if (as) err *= 0.6; }
+        if (type === 'auto') { const o = smartAim(i); aim = o.aim * 0.7; depth = o.depth * 0.9; pow = 0.55; type = high && Math.abs(ball.z) < HL * 0.75 ? 'smash' : 'drive'; if (as) err *= 0.6; }
         if (type === 'smash' && (!high || Math.abs(ball.z) > HL * 0.8)) type = 'drive';
         if (as) { aim = U.clamp(aim, -0.85, 0.85); depth = U.clamp(depth, 0.15, 0.88); }
         hit(i, type, aim, depth, pow, err, false);
@@ -254,7 +256,7 @@
         const stretch = d > reach * 0.75 ? 0.07 : 0;
         const mistake = r < dd.err + incoming * (1 - dd.grab) + stretch * (1 - dd.grab);
         let aim, depth, type = 'drive', pow = dd.power * (0.75 + ctx.rng() * 0.25);
-        const o = smartAim(i); aim = U.lerp((ctx.rng() - 0.5) * 1.4, o.aim, dd.smart); depth = 0.45 + ctx.rng() * 0.45;
+        const o = smartAim(i); aim = U.lerp((ctx.rng() - 0.5) * 1.4, o.aim * (0.8 + dd.smart * 0.35), dd.smart); depth = 0.45 + ctx.rng() * 0.3 + dd.smart * 0.2; pow = U.clamp(pow + dd.smart * 0.15, 0, 1);
         if (high && Math.abs(ball.z) < HL * 0.8 && ctx.rng() < 0.4 + dd.smart * 0.5) type = 'smash';
         else { const rr = ctx.rng(); if (rr < 0.12 + (C.noBounce ? 0.15 : 0)) type = 'drop'; else if (rr < 0.2 + (C.noBounce ? 0.15 : 0)) type = 'lob'; }
         let err = dd.aim * (C.tt ? 0.22 : C.noBounce ? 0.6 : 1), net = false;
@@ -263,7 +265,7 @@
       }
       /* ---------- movement ---------- */
       function movePlayer(i, dt) {
-        const p = S.P[i], hum = ctx.isHuman(i), sp = C.spd * (hum ? 1 : diffOf(i).speed);
+        const p = S.P[i], hum = ctx.isHuman(i), sp = C.spd * (hum ? (ctx.assist(i) && Math.abs(p.mx) + Math.abs(p.mz) < 0.08 ? 0.92 : 1) : diffOf(i).speed);
         if (p.a !== 'ready' && p.a !== 'idle' && p.at > (p.a === 'cheer' || p.a === 'sad' ? 1.6 : 0.45)) { p.a = 'ready'; p.at = 0; }
         if (st.phase === 'serve' || st.phase === 'over') { faceNet(p, dt); return; }
         if (st.phase === 'dead') { return; }
@@ -274,7 +276,7 @@
         else {
           // CPU or assisted human: run to the interception point (or back home)
           if (incoming && responsible(i)) {
-            if (p.ai.react > 0 && !hum) p.ai.react -= dt;
+            if (p.ai.react > 0 && (!hum || p.ai.react > 0.3)) p.ai.react -= dt;
             else { p.ai.cool -= dt; if (!p.ai.plan || p.ai.cool <= 0) { p.ai.plan = plan(i); p.ai.cool = 0.25; } }
             const q = p.ai.plan; if (q) { const off = (q.x > p.x ? -1 : 1) * Math.min(0.45, reachOf(i) * 0.3); tx = q.x + (C.tt ? 0 : off); tz = q.z + side(p.team) * (C.tt ? 0.25 : 0.35); }
           } else if (!incoming || !responsible(i)) { tx = homeX(p) + (incoming ? 0 : ball.x * 0.3); tz = homeZ(p); if (dbl && !C.tt && ball.live && ball.lastTeam === p.team && p.k === (st.lastWin === p.team ? 0 : 1)) tz = side(p.team) * HL * 0.45; }
