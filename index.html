@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <title>GROK SPORTS COMMAND</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d4ed8'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%23fff'/%3E%3Cpath d='M32 14l6 10-6 6-6-6z M20 40l6-6 6 6-2 8z M44 40l-6-6-6 6 2 8z' fill='%231e1b3a'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="touch"></div>
+  <div id="tags"></div>
+  <div id="joy" class="hidden"><div id="joyBase"><div id="joyKnob"></div></div></div>
+
+  <div id="hud" class="hidden">
+    <div id="board">
+      <div class="tm" id="tm0"><span class="nm" id="nm0">YOU</span><b id="sc0">0</b></div>
+      <div class="mid" id="mid">0:00</div>
+      <div class="tm r" id="tm1"><b id="sc1">0</b><span class="nm" id="nm1">CPU</span></div>
+    </div>
+    <div id="hudL"><div id="assistTag">🛟 ASSIST</div><div id="turnTag" class="hidden"></div></div>
+    <div id="hudBtns"><button id="bPause" class="rbtn" type="button" aria-label="Pause">&#9208;</button></div>
+    <div id="wind"></div>
+    <div id="big"></div>
+    <div id="msg"></div>
+    <div id="hint"></div>
+    <div id="meter" class="hidden"><div id="meterZone"></div><div id="meterFill"></div><div id="meterMark"></div></div>
+    <div id="joyHint" class="hidden">MOVE<br>here</div>
+    <div id="tip"></div>
+  </div>
+
+  <div id="hubHud" class="hidden">
+    <div id="hubTop"><div class="coins">🪙 <b id="coinN">0</b></div><div class="pill" id="hubRank">🥾 Rookie</div><div class="sp"></div></div>
+    <div id="hubBtns">
+      <button id="bMenu" class="rbtn" type="button" aria-label="Menu">☰</button>
+      <button id="bFriends" class="rbtn" type="button" aria-label="Play with friends">🤝</button>
+      <button id="bDaily" class="rbtn" type="button" aria-label="Daily challenges">📅</button>
+      <button id="bSettings" class="rbtn" type="button" aria-label="Settings">⚙️</button>
+    </div>
+    <button id="doorBtn" class="btn gold hidden" type="button">ENTER</button>
+    <div id="where">Walk with the joystick · walk into a door to go inside</div>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="fade"></div>
+  <div id="pnl" class="screen top hidden"><div id="pnlCard" class="card"></div></div>
+
+  <div id="scrTitle" class="screen">
+    <div class="card title">
+      <div class="logo"><span class="lg1">GROK</span><span class="lg2">SPORTS</span><span class="lg3">COMMAND</span></div>
+      <div class="coins">🪙 <b id="coinT">0</b></div>
+      <div class="row prof"><input id="nameIn" maxlength="12" placeholder="Your name" autocomplete="off" /></div>
+      <div class="grid2">
+        <button id="bPlay" class="btn primary big" type="button">🏟️ ENTER SPORTS COMMAND</button>
+        <button id="bQuick" class="btn blue" type="button">⚡ QUICK PLAY</button>
+        <button id="bOnline" class="btn pink" type="button">🤝 PLAY WITH FRIENDS</button>
+      </div>
+      <p class="foot">10 sports · Soccer, Basketball, Tennis, Bowling, Volleyball, Mini Golf, Badminton, Dodgeball, Archery, Table Tennis</p>
+      <a class="foot link" href="https://lizethbran13-cmyk.github.io/grok-arcade/">&larr; Grok Arcade</a>
+    </div>
+  </div>
+  <div id="loading" class="screen hidden"><div class="card"><h2 id="loadT">Getting the stadium ready&hellip;</h2><div class="spin"></div></div></div>
+
+  <script src="three.min.js"></script>
+  <script src="peerjs.min.js"></script>
+  <script src="grok-net.js"></script>
+  <script src="js/util.js?v=1"></script>
+  <script src="js/data.js?v=1"></script>
+  <script src="js/models.js?v=1"></script>
+  <script src="js/audio.js?v=1"></script>
+  <script src="js/view.js?v=1"></script>
+  <script src="js/venue.js?v=1"></script>
+  <script src="js/input.js?v=1"></script>
+  <script src="js/pose.js?v=1"></script>
+  <script src="js/engine.js?v=1"></script>
+  <script src="js/netgame.js?v=1"></script>
+  <script src="js/sp-soccer.js?v=1"></script>
+  <script src="js/sp-basketball.js?v=1"></script>
+  <script src="js/sp-bowling.js?v=1"></script>
+  <script src="js/sp-volleyball.js?v=1"></script>
+  <script src="js/sp-golf.js?v=1"></script>
+  <script src="js/sp-dodgeball.js?v=1"></script>
+  <script src="js/sp-archery.js?v=1"></script>
+  <script src="js/hub.js?v=1"></script>
+  <script src="js/ui.js?v=1"></script>
+  <script src="js/net.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+  <script>SP.G.init();</script>
+</body>
+</html>
