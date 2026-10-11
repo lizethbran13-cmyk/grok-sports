@@ -12,14 +12,14 @@
   const ang = (i) => Math.PI + i / LAYOUT.length * Math.PI * 2;   // index 0 = north (-z)
 
   H.build = function (force) {
-    if (H.built && !force && H.q === V.quality) { H.show(); return; }
+    if (H.built && !force && H.q === V.quality && H.world === V.world && H.av && H.av.parent === V.world) { H.show(); return; }   // a match clears the world: rebuild the plaza after it
     V.clearWorld(); VN.reset(); H.doors = []; H.cols = []; H.npcs = []; H.q = V.quality; H.spin = [];
     V.env(VN.ENV.day);
     VN.ground(420, '#4fbf55', '#3aa548', -0.05);
     plaza(); LAYOUT.forEach((id, i) => building(id, i)); rooms(); props(); npcs();
     VN.clouds(M.low ? 6 : 12, 200, 60);
     H.board = VN.jumbo(0, 12.5, -9.5, 0, 7, 3.6); drawBoard();
-    H.rebuildAvatar(); H.built = true;
+    H.rebuildAvatar(); H.built = true; H.world = V.world;
     V.anim((dt, t) => { H.spin.forEach((s) => { s.rotation.y += dt * (s.userData.spd || 0.6); s.position.y = s.userData.y0 + Math.sin(t * 1.5 + s.userData.ph) * 0.25; }); });
   };
   H.show = function () { };
