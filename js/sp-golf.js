@@ -17,8 +17,9 @@
     { n: 'Grok Castle', par: 3, poly: [[-2.2, 0.5], [2.2, 0.5], [2.2, -10], [-2.2, -10]], tee: [0, 0], cup: [0, -9.2], walls: [[-2.2, -6, -0.3, -6], [0.3, -6, 2.2, -6]], bump: [[-1.2, -3.5, 0.3], [1.2, -3.5, 0.3]], slope: [[-2.2, -8.8, 2.2, -6.2, 0, 0.9]], castle: { x: 0, z: -6 } }
   ];
   // scale every hole up so the lanes fit our chunky athletes
-  HOLES.forEach((h) => { const sc = (a) => a.map((v) => v * SC); h.poly = h.poly.map(sc); h.tee = sc(h.tee); h.cup = sc(h.cup); if (h.walls) h.walls = h.walls.map(sc); if (h.bump) h.bump = h.bump.map(sc); if (h.water) h.water = h.water.map(sc);
-    if (h.slope) h.slope = h.slope.map((q) => [q[0] * SC, q[1] * SC, q[2] * SC, q[3] * SC, q[4], q[5]]); if (h.mill) { h.mill.x *= SC; h.mill.z *= SC; } if (h.mound) { h.mound.x *= SC; h.mound.z *= SC; h.mound.r *= SC; } if (h.castle) { h.castle.x *= SC; h.castle.z *= SC; } });
+  const prep = (h) => { const sc = (a) => a.map((v) => v * SC); h.poly = h.poly.map(sc); h.tee = sc(h.tee); h.cup = sc(h.cup); if (h.walls) h.walls = h.walls.map(sc); if (h.bump) h.bump = h.bump.map(sc); if (h.water) h.water = h.water.map(sc);
+    if (h.slope) h.slope = h.slope.map((q) => [q[0] * SC, q[1] * SC, q[2] * SC, q[3] * SC, q[4], q[5]]); if (h.mill) { h.mill.x *= SC; h.mill.z *= SC; } if (h.mound) { h.mound.x *= SC; h.mound.z *= SC; h.mound.r *= SC; } if (h.castle) { h.castle.x *= SC; h.castle.z *= SC; } (h.extra || []).forEach((q) => { q.x *= SC; q.z *= SC; }); return h; };
+  HOLES.forEach(prep);
   const PAR = HOLES.reduce((s, h) => s + h.par, 0);
   // segment list for a hole (outline + extra walls)
   function segs(h) { const s = []; const p = h.poly; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s.push([a[0], a[1], b[0], b[1]]); } (h.walls || []).forEach((w) => s.push(w)); return s; }
@@ -59,16 +60,17 @@
     for (let i = 0; i < 1400; i++) { r = step(b, h, S0, t, 1 / 120); t += 1 / 120; if (path && i % 6 === 0) path.push([b.x, b.z]); if (r) break; if (Math.hypot(b.vx, b.vz) < 0.02 && !h.slope && !h.mound) break; if (Math.hypot(b.vx, b.vz) < 0.01) break; }
     return { res: r, x: b.x, z: b.z, path, t };
   }
-  SP.Golf = { HOLES, simulate, PAR };
+  SP.Golf = { HOLES, simulate, PAR, prep, segs };
 
-  SP.Sports.golf = function (ctx) {
-    const S = { P: [], O: [], hud: {}, x: {} }, R = ctx.rng, n = ctx.players.length, NH = ctx.mode.id === '3' ? 3 : 9;
+  SP.Sports.golf = function (ctx, opt) {
+    opt = opt || {}; const HOLES_ = opt.holes || HOLES, PAL = Object.assign({ felt: '#22c55e', base: '#7c2d12', wall: '#a16207', rail: '#fde68a', bump: '#ef4444', bump2: '#fde047', glow: false }, opt.pal || {});
+    const S = { P: [], O: [], hud: {}, x: {} }, R = ctx.rng, n = ctx.players.length, NH = opt.nh ? opt.nh(ctx.mode.id) : ctx.mode.id === '3' ? 3 : 9;
     const balls = ctx.players.map(() => ({ x: 0, y: BR, z: 0, vx: 0, vz: 0, v: true, done: false, lx: 0, lz: 0 })); balls.forEach((b) => S.O.push(b));
     const st = { hole: 0, turn: 0, phase: 'intro', t: 0, simT: 0, strokes: ctx.players.map(() => []), cur: ctx.players.map(() => 0), aim: null, over: false };
     ctx.players.forEach(() => S.P.push({ x: 0, y: 0, z: 0, ry: Math.PI, a: 'aimputt', at: 0, sd: 1, pw: 0, notag: true }));
-    let H = HOLES[0], S0 = segs(H);
+    let H = HOLES_[0], S0 = segs(H);
     function startHole(k) {
-      st.hole = k; H = HOLES[k]; S0 = segs(H); st.phase = 'intro'; st.t = 0; st.cur = ctx.players.map(() => 0);
+      st.hole = k; H = HOLES_[k]; S0 = segs(H); st.phase = 'intro'; st.t = 0; st.cur = ctx.players.map(() => 0);
       balls.forEach((b, i) => { b.x = H.tee[0] + (i - (n - 1) / 2) * 0.3; b.z = H.tee[1]; b.lx = b.x; b.lz = b.z; b.vx = b.vz = 0; b.done = false; b.v = true; b.safe = [b.x, b.z]; });
       st.turn = 0; ctx.ev({ t: 'msg', b: 'HOLE ' + (k + 1), s: H.n + ' · Par ' + H.par, d: 1600 }); S.x.hole = k; drawHole(); upd();
     }
@@ -132,7 +134,7 @@
     function place(p, b) { const toC = Math.atan2(H.cup[0] - b.x, H.cup[1] - b.z); p.x = b.x + Math.cos(toC) * 0.42; p.z = b.z - Math.sin(toC) * 0.42; S.P.forEach((q, j) => { q.hid = j !== st.turn; }); p.ry = Math.atan2(b.x - p.x, b.z - p.z); p.pw = st.aim ? st.aim.pw : 0; if (st.phase === 'aim' && p.a !== 'putt') p.a = 'aimputt'; }
     function finish() {
       st.over = true; st.phase = 'over'; const tot = ctx.players.map((p, i) => st.strokes[i].reduce((s, v) => s + v, 0)), mn = Math.min(...tot), w = tot.map((t, i) => i).filter((i) => tot[i] === mn);
-      const par = HOLES.slice(0, NH).reduce((s, h) => s + h.par, 0);
+      const par = HOLES_.slice(0, NH).reduce((s, h) => s + h.par, 0);
       let win = w.length === 1 ? ctx.players[w[0]].team : -1; if (ctx.cfg.teamUp) { const tt = [0, 0]; ctx.players.forEach((p, i) => { tt[p.team] += tot[i]; }); win = tt[0] < tt[1] ? 0 : tt[1] < tt[0] ? 1 : -1; }
       const score = {}; tot.forEach((t, i) => { score[i] = t; }); ctx.ev({ t: 'roar', k: 1 });
       ctx.end({ win, title: win < 0 ? "It's a tie!" : ctx.players[w[0]].name + ' wins with ' + mn + '!', lines: ctx.players.map((p, i) => p.name + ': ' + tot[i] + ' (' + (tot[i] - par >= 0 ? '+' : '') + (tot[i] - par) + ') · ' + st.strokes[i].join(' ')), score, scoreLabel: 'strokes' });
@@ -159,11 +161,11 @@
       if (holeG) { V.world.remove(holeG); holeG.traverse((m) => { if (m.geometry) m.geometry.dispose(); }); }
       holeG = new T.Group(); const b = new M.B(), h = H;
       const sh = new T.Shape(); h.poly.forEach((p, i) => (i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1])));
-      const g = new T.ShapeGeometry(sh); g.rotateX(-Math.PI / 2); b.geo(g, '#22c55e', 0, 0.01, 0);
+      const g = new T.ShapeGeometry(sh); g.rotateX(-Math.PI / 2); b.geo(g, PAL.felt, 0, 0.01, 0, 0, 0, 0, 1, 1, 1, PAL.glow ? 'gloss' : null);
       // felt base slab + border, walls
-      const bg = new T.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: false }); bg.rotateX(-Math.PI / 2); b.geo(bg, '#7c2d12', 0, -0.115, 0);
-      segs(h).forEach((s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L = Math.hypot(dx, dz); b.box(0.1, 0.2, L + 0.1, 0.03, '#a16207', (s[0] + s[2]) / 2, 0.07, (s[1] + s[3]) / 2, 0, Math.atan2(dx, dz), 0, 'gloss'); b.box(0.11, 0.025, L + 0.11, 0.005, '#fde68a', (s[0] + s[2]) / 2, 0.21, (s[1] + s[3]) / 2, 0, Math.atan2(dx, dz), 0); });
-      (h.bump || []).forEach((c) => { b.cyl(c[2], c[2], 0.16, '#ef4444', c[0], 0.08, c[1], 0, 0, 0, 'gloss', 20); b.cyl(c[2] * 0.6, c[2] * 0.6, 0.18, '#fde047', c[0], 0.09, c[1], 0, 0, 0, 'gloss', 16); });
+      const bg = new T.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: false }); bg.rotateX(-Math.PI / 2); b.geo(bg, PAL.base, 0, -0.115, 0);
+      segs(h).forEach((s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L = Math.hypot(dx, dz); b.box(0.1, 0.2, L + 0.1, 0.03, PAL.wall, (s[0] + s[2]) / 2, 0.07, (s[1] + s[3]) / 2, 0, Math.atan2(dx, dz), 0, 'gloss'); b.box(0.11, 0.025, L + 0.11, 0.005, PAL.rail, (s[0] + s[2]) / 2, 0.21, (s[1] + s[3]) / 2, 0, Math.atan2(dx, dz), 0, PAL.glow ? 'glow' : null); });
+      (h.bump || []).forEach((c) => { b.cyl(c[2], c[2], 0.16, PAL.bump, c[0], 0.08, c[1], 0, 0, 0, 'gloss', 20); b.cyl(c[2] * 0.6, c[2] * 0.6, 0.18, PAL.bump2, c[0], 0.09, c[1], 0, 0, 0, PAL.glow ? 'glow' : 'gloss', 16); });
       (h.water || []).forEach((w) => { b.box(w[2] - w[0], 0.02, w[3] - w[1], 0, '#0ea5e9', (w[0] + w[2]) / 2, 0.02, (w[1] + w[3]) / 2, 0, 0, 0, 'gloss'); for (let i = 0; i < 5; i++) b.sph(0.12, '#16a34a', w[0] + 0.4 + U.hash(i, 2) * (w[2] - w[0] - 0.8), 0.03, w[1] + 0.3 + U.hash(i, 6) * (w[3] - w[1] - 0.6), 1.3, 0.15, 1); });
       (h.slope || []).forEach((s) => { const n2 = 5; for (let i = 0; i < n2; i++) { const x = U.lerp(s[0] + 0.4, s[2] - 0.4, (i + 0.5) / n2), z = (s[1] + s[3]) / 2 + Math.sin(i) * 0.6; b.geo(new T.ConeGeometry(0.12, 0.3, 3), '#bbf7d0', x, 0.02, z, Math.PI / 2, Math.atan2(s[4], s[5]) * -1 + Math.PI, 0, 1, 0.12, 1); } b.box(s[2] - s[0], 0.004, s[3] - s[1], 0, '#16a34a', (s[0] + s[2]) / 2, 0.013, (s[1] + s[3]) / 2); });
       if (h.mound) { b.cyl(h.mound.r, h.mound.r, 0.01, '#15803d', h.mound.x, 0.014, h.mound.z, 0, 0, 0, null, 24); b.tor(h.mound.r * 0.6, 0.03, '#f97316', h.mound.x, 0.02, h.mound.z, Math.PI / 2, 0, 0); b.geo(new T.ConeGeometry(0.9, 1.0, 16, 1, true), '#78350f', h.mound.x + 4.6, 0.5, h.mound.z - 1.2); b.cyl(0.32, 0.32, 0.05, '#f97316', h.mound.x + 4.6, 1.0, h.mound.z - 1.2, 0, 0, 0, 'glow', 12); }
@@ -176,10 +178,11 @@
       const sg = V.sign((st.hole + 1) + ' · ' + h.n + ' · PAR ' + h.par, 2.2, 0.5, '#1e3a8a', '#fde047'); sg.position.set(h.tee[0] - 2.8, 0.8, h.tee[1] + 0.2); sg.rotation.y = 0.5; holeG.add(sg);
       mill = null; if (h.mill) { const w = new M.B(); [-1, 1].forEach((k) => w.box(0.55, 1.6, 1.2, 0.06, '#f8fafc', k * 0.68, 0.8, -0.6)); w.box(1.9, 0.9, 1.2, 0.06, '#f8fafc', 0, 2.05, -0.6); w.box(0.8, 0.5, 1.22, 0.04, '#1e293b', 0, 0.25, -0.6); w.geo(new T.ConeGeometry(1.25, 1.1, 4), '#dc2626', 0, 3.05, -0.6, 0, Math.PI / 4, 0); w.box(0.3, 0.4, 0.05, 0.05, '#7dd3fc', -0.45, 2.05, 0.01, 0, 0, 0, 'glow'); w.box(0.3, 0.4, 0.05, 0.05, '#7dd3fc', 0.45, 2.05, 0.01, 0, 0, 0, 'glow'); const base = w.group(true); base.position.set(h.mill.x, 0, h.mill.z); holeG.add(base);
         const bl = new M.B(); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; bl.box(0.3, 1.7, 0.04, 0.03, k % 2 ? '#facc15' : '#3b82f6', Math.sin(a) * 0.9, Math.cos(a) * 0.9, 0, 0, 0, -a); } bl.cyl(0.14, 0.14, 0.14, '#1e293b', 0, 0, 0.02, Math.PI / 2, 0, 0, null, 10); mill = bl.group(true); mill.position.set(h.mill.x, 1.85, h.mill.z + 0.06); holeG.add(mill); }
+      if (opt.holeDeco) opt.holeDeco(holeG, h, st.hole);
       V.world.add(holeG);
     }
     function build() {
-      decor(); E.makeModels('putter', { tags: false, ring: false });
+      if (opt.decor) opt.decor(); else decor(); E.makeModels('putter', { tags: false, ring: false });
       ctx.players.forEach((p, i) => { const m = M.sportBall('golf', BR); const col = ['#ffffff', '#facc15', '#f472b6'][i % 3]; m.traverse((q) => { if (q.isMesh && q.geometry.attributes.color) { const c = new T.Color(col), a = q.geometry.attributes.color; for (let k = 0; k < a.count; k++) a.setXYZ(k, c.r, c.g, c.b); a.needsUpdate = true; } }); V.world.add(m); bms.push(m); });
       for (let k = 0; k < 40; k++) { const d = new T.Mesh(new T.SphereGeometry(0.04, 6, 4), new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85 })); d.visible = false; V.world.add(d); aimDots.push(d); }
       startHole(0);
@@ -206,7 +209,7 @@
     function localInput(ev) { if (ev.k === 'down') st.aim = { dx: 0, dy: 0, pw: 0 }; else if (ev.k === 'drag' && st.aim) { st.aim.dx = ev.dx; st.aim.dy = ev.dy; st.aim.pw = U.clamp(Math.hypot(ev.dx, ev.dy) / 0.32, 0, 1); } else if (ev.k === 'up') st.aim = null; }
     const sync = { get: () => ({ ph: st.phase, tu: st.turn, mt: Math.round(st.simT * 100) / 100, cur: st.cur }), set: (v) => { st.phase = String(v.ph); st.turn = v.tu | 0; st.simT = +v.mt || 0; if (Array.isArray(v.cur)) st.cur = v.cur; } };
     const prepInput = (ev) => { if (ev.k === 'up' || ev.k === 'putt') { const c = E.camBasis(); ev.cam = { rx: c.rx, rz: c.rz, fx: c.fx, fz: c.fz }; } return ev; };
-    return { S, build, sim, input, view, cam, st, joy: false, sync, prepInput, balls, cpuPutt, putt, localInput, startHole, holes: HOLES, onX: (x) => { if (x.hole != null && x.hole !== st.hole) { st.hole = x.hole; H = HOLES[x.hole]; S0 = segs(H); drawHole(); } } };
+    return { S, build, sim, input, view, cam, st, joy: false, sync, prepInput, balls, cpuPutt, putt, localInput, startHole, holes: HOLES_, onX: (x) => { if (x.hole != null && x.hole !== st.hole) { st.hole = x.hole; H = HOLES_[x.hole]; S0 = segs(H); drawHole(); } } };
   };
   SP.Sports.golf.rec = { '9': { n: 'Best 9-hole score', low: true }, '3': { n: 'Best 3-hole score', low: true } };
 })();

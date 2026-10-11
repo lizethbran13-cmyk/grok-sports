@@ -37,8 +37,8 @@
       const n = Math.floor(len / every);
       for (let i = 0; i < n; i++) {
         const x = -len / 2 + (i + 0.5) * len / n, sc = seatCols[(Math.floor(i / 4) + r) % seatCols.length];
-        if (!M.low || i % 2 === 0) b.box(0.5, 0.1, 0.42, 0.04, sc, x, top + 0.05, z + depth * 0.45);
-        if (!M.low) b.box(0.5, 0.36, 0.08, 0.035, M.darker(sc, 0.08), x, top + 0.24, z + depth * 0.72);
+        if (!M.low || i % 2 === 0) b.box(0.5, 0.1, 0.42, o.lite ? 0 : 0.04, sc, x, top + 0.05, z + depth * 0.45);
+        if (!M.low) b.box(0.5, 0.36, 0.08, o.lite ? 0 : 0.035, M.darker(sc, 0.08), x, top + 0.24, z + depth * 0.72);
         if (rnd() < dens) spots.push({ x, y: top + 0.05, z: z + depth * 0.45, ry: Math.PI });
       }
     }
@@ -47,7 +47,7 @@
     b.box(len, 0.08, 0.08, 0.03, '#f8fafc', 0, base + 0.95, -0.05);
     for (let i = 0; i <= Math.floor(len / 3); i++) b.cyl(0.035, 0.035, 0.95, '#f8fafc', -len / 2 + i * len / Math.floor(len / 3), base + 0.48, -0.05, 0, 0, 0, null, 6);
     const g = new T.Group(); b.meshes(true).forEach((m) => { m.receiveShadow = true; g.add(m); });
-    if (o.crowd !== false && spots.length) { const cr = M.crowd(spots, o.seed || 3, 3); g.add(cr); cr.userData.groups.forEach((x, i) => VN.crowdGroups.push({ g: x, ph: i * 1.7 + (o.seed || 0) })); }
+    if (o.crowd !== false && spots.length) { const cr = M.crowd(spots, o.seed || 3, 3, o.lite); g.add(cr); cr.userData.groups.forEach((x, i) => VN.crowdGroups.push({ g: x, ph: i * 1.7 + (o.seed || 0) })); }
     g.position.set(o.x, o.y || 0, o.z); g.rotation.y = o.ry || 0; return VN.add(g);
   };
   // four stands around a w x l field (gap = distance from field edge)

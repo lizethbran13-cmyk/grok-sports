@@ -23,7 +23,7 @@
     const list = ps.map((p) => '<div class="item"><div class="ic"><span class="sw" style="background:' + GN.cleanColor(p.color) + '"></span></div><div class="grow"><b>' + U.esc(p.name) + '</b><small>' + (p.slot === 0 ? 'Host' : 'Player ' + (p.slot + 1)) + (p.pid === room.pid ? ' (you)' : '') + '</small></div></div>').join('');
     const plan = E.plan(c.sport, c.mode, ps.map((p) => ({ pid: p.pid, name: p.name, look: {} })), { team: c.team, cpus: c.cpus, teamUp: c.teamUp });
     UI.panel('<h2>🤝 ROOM <span style="letter-spacing:4px;color:#7c3aed">' + room.code + '</span></h2><p class="sub">Friends join with code <b>' + room.code + '</b> (' + ps.length + '/3)</p><div class="list">' + list + '</div>' +
-      (host ? '<h3>SPORT</h3><div class="sportGrid">' + D.SPORTS.map((s) => '<button class="btn small' + (s.id === c.sport ? ' gold' : ' alt') + '" data-sp="' + s.id + '">' + s.icon + ' ' + s.n + '</button>').join('') + '</div>' +
+      (host ? '<h3>SPORT</h3><div class="sportGrid">' + (D.lobbySports ? D.lobbySports() : D.SPORTS).map((s) => '<button class="btn small' + (s.id === c.sport ? ' gold' : ' alt') + '" data-sp="' + s.id + '">' + s.icon + ' ' + s.n + '</button>').join('') + '</div>' +
         '<h3>MODE</h3>' + UI.segH('nMode', sp.modes.map((m) => [m.id, m.n])) +
         (mode.turns ? '<h3>CPU PLAYERS</h3>' + UI.segH('nCpu', [['0', '0'], ['1', '1'], ['2', '2']]) + '<div class="opt"><div>🤝 Team Up<small>Friends add their scores together vs the CPUs</small></div>' + UI.tog('tTeam', c.teamUp) + '</div>'
           : '<h3>TEAMS</h3>' + UI.segH('nTeam', [['coop', '🤝 TEAM UP vs CPU'], ['versus', '⚔️ VERSUS']])) +

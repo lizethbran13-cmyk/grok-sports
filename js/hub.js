@@ -9,6 +9,7 @@
   const LAYOUT = ['soccer', 'tennis', 'gate:pickle', 'basketball', 'volleyball', 'bowling', 'locker', 'trophy', 'golf', 'badminton', 'dodgeball', 'archery', 'tabletennis', 'gate:fc'];
   const ROOMS = { locker: { x: 300, z: 0, w: 16, d: 12 }, trophy: { x: -300, z: 0, w: 20, d: 14 } };
   const B = () => new M.B();
+  H.ROOMS = ROOMS; H.ext = H.ext || null;   // DLC hook (Ratita Stadium Night adds an outdoor area)
   const ang = (i) => Math.PI + i / LAYOUT.length * Math.PI * 2;   // index 0 = north (-z)
 
   H.build = function (force) {
@@ -16,8 +17,8 @@
     V.clearWorld(); VN.reset(); H.doors = []; H.cols = []; H.npcs = []; H.q = V.quality; H.spin = [];
     V.env(VN.ENV.day);
     VN.ground(420, '#4fbf55', '#3aa548', -0.05);
-    plaza(); LAYOUT.forEach((id, i) => building(id, i)); rooms(); props(); npcs();
-    VN.clouds(M.low ? 6 : 12, 200, 60);
+    plaza(); LAYOUT.forEach((id, i) => building(id, i)); rooms(); props(); npcs(); if (H.ext && H.ext.build) H.ext.build({ B, sh, kiosk });
+    H.cloudG = VN.clouds(M.low ? 6 : 12, 200, 60);
     H.board = VN.jumbo(0, 12.5, -9.5, 0, 7, 3.6); drawBoard();
     H.rebuildAvatar(); H.built = true; H.world = V.world;
     V.anim((dt, t) => { H.spin.forEach((s) => { s.rotation.y += dt * (s.userData.spd || 0.6); s.position.y = s.userData.y0 + Math.sin(t * 1.5 + s.userData.ph) * 0.25; }); });
@@ -121,6 +122,8 @@
   function props() {
     const b = B();
     for (let i = 0; i < LAYOUT.length; i++) { const a = ang(i + 0.5), r = R - 3; const x = Math.sin(a) * r, z = Math.cos(a) * r; VN.tree(x, z, 0.9, b); H.cols.push({ x, z, r: 0.6 });
+      // a DLC gate can claim this slot between two buildings (no lamp, bench or flowers there then)
+      if (H.ext && H.ext.slotA != null && Math.abs(Math.sin(a) - Math.sin(H.ext.slotA)) < 0.01 && Math.abs(Math.cos(a) - Math.cos(H.ext.slotA)) < 0.01) continue;
       const lx = Math.sin(a) * 19, lz = Math.cos(a) * 19; b.cyl(0.08, 0.1, 4, '#334155', lx, 2, lz, 0, 0, 0, null, 8); b.sph(0.35, '#fef3c7', lx, 4.1, lz, 1, 1, 1, 0, 0, 0, 'glow', 10, 8); H.cols.push({ x: lx, z: lz, r: 0.3 });
       // bench
       const bx = Math.sin(a) * 15.5, bz = Math.cos(a) * 15.5; b.box(2.2, 0.12, 0.6, 0.05, '#b45309', bx, 0.5, bz, 0, a, 0); b.box(2.2, 0.5, 0.1, 0.04, '#b45309', bx + Math.sin(a) * 0.3, 0.85, bz + Math.cos(a) * 0.3, 0, a, 0); b.box(0.12, 0.5, 0.5, 0.03, '#334155', bx, 0.25, bz, 0, a, 0);
@@ -222,18 +225,19 @@
     if (!H.av || !H.av.parent) H.rebuildAvatar();
     V.env(VN.ENV.day);
     H.area = 'plaza'; const d = spot && H.doors.find((q) => q.id === spot || q.sport === spot);
-    if (d && !d.kiosk && !d.exit) { H.p.x = d.x - Math.sin(d.a) * 2.5; H.p.z = d.z - Math.cos(d.a) * 2.5; H.p.ry = d.a + Math.PI; }
+    if (H.ext && H.ext.enter && H.ext.enter(spot, d)) { /* placed by the DLC */ }
+    else if (d && !d.kiosk && !d.exit) { H.p.x = d.x - Math.sin(d.a) * 2.5; H.p.z = d.z - Math.cos(d.a) * 2.5; H.p.ry = d.a + Math.PI; }
     else if (spot === 'locker' || spot === 'trophy') { H.goto(spot, true); }
     else { H.p.x = 0; H.p.z = -12; H.p.ry = Math.PI; }
     H.cooldown = 1.0; H.camSnap = true; drawBoard(); drawRecords(); trophies();
     SP.UI.show('hubHud', true); SP.Input.setJoy(true); SP.Input.joyAll = true; SP.Input.h = H.input; SP.Input.enabled = true;
-    document.getElementById('where').textContent = 'Walk with the joystick · walk into a door to go inside';
+    if (H.area === 'plaza') document.getElementById('where').textContent = 'Walk with the joystick · walk into a door to go inside';
   };
   H.goto = function (where, instant) {
     const go = () => {
       if (where === 'plaza') { const d = H.doors.find((q) => q.id === H.area && !q.kiosk); H.area = 'plaza'; if (d) { H.p.x = d.x - Math.sin(d.a) * 2.6; H.p.z = d.z - Math.cos(d.a) * 2.6; H.p.ry = d.a + Math.PI; } document.getElementById('where').textContent = 'Walk with the joystick · walk into a door to go inside'; }
       else { const r = ROOMS[where]; H.area = where; H.p.x = r.x; H.p.z = r.z + r.d / 2 - 2.2; H.p.ry = Math.PI; document.getElementById('where').textContent = where === 'locker' ? 'Walk to the 🧥 STYLE MIRROR to change your outfit' : 'Look at your trophies · walk to the 📋 board for records'; }
-      H.cooldown = 0.8; H.camSnap = true; SP.Snd.fx('door');
+      H.cooldown = 0.8; H.camSnap = true; SP.Snd.fx('door'); if (H.ext && H.ext.area) H.ext.area(H.area);
     };
     if (instant) { go(); return; }
     const f = document.getElementById('fade'); f.classList.add('on'); setTimeout(() => { go(); f.classList.remove('on'); }, 250);
@@ -244,6 +248,7 @@
   };
   H.useDoor = function () {
     const d = H.near; if (!d || SP.UI.open) return; SP.Snd.fx('door');
+    if (H.ext && H.ext.useDoor && H.ext.useDoor(d)) return;
     if (d.exit) { H.goto('plaza'); return; }
     if (d.gate) { H.portal(d.gate); return; }
     if (d.id === 'locker' || d.id === 'trophy') { H.goto(d.id); return; }
@@ -277,11 +282,11 @@
     H.av.position.set(p.x, 0, p.z); H.av.rotation.y = p.ry; p.at += dt; SP.Pose.apply(H.av, dt, { a: 'idle', at: p.at, sp: m > 0.05 ? spd * m : 0 }, V.t);
     // nearest door / kiosk
     H.cooldown = Math.max(0, (H.cooldown || 0) - dt);
-    let near = null, nd = 99; H.doors.forEach((d) => { const inRoom = d.kiosk || d.exit ? (d.exit ? d.exit === H.area : H.area !== 'plaza' && Math.abs(d.x - p.x) < 40) : H.area === 'plaza'; if (!inRoom) return; const dd = Math.hypot(p.x - d.x, p.z - d.z); if (dd < nd) { nd = dd; near = d; } });
-    const lim = near && (near.kiosk ? 1.8 : near.exit ? 1.6 : 3.2);
+    let near = null, nd = 99; H.doors.forEach((d) => { const inRoom = d.area ? d.area === H.area : d.kiosk || d.exit ? (d.exit ? d.exit === H.area : H.area !== 'plaza' && Math.abs(d.x - p.x) < 40) : H.area === 'plaza'; if (!inRoom) return; const dd = Math.hypot(p.x - d.x, p.z - d.z); if (dd < nd) { nd = dd; near = d; } });
+    const lim = near && (near.r || (near.kiosk ? 1.8 : near.exit ? 1.6 : 3.2));
     H.near = near && nd < lim ? near : null;
     const btn = document.getElementById('doorBtn');
-    if (H.near) { btn.classList.remove('hidden'); btn.textContent = (H.near.sport || H.near.gate || H.near.id === 'locker' || H.near.id === 'trophy' ? 'ENTER ' : '') + H.near.label; } else btn.classList.add('hidden');
+    if (H.near) { btn.classList.remove('hidden'); btn.textContent = (H.near.sport || H.near.gate || H.near.id === 'stadium' || H.near.id === 'locker' || H.near.id === 'trophy' ? 'ENTER ' : '') + H.near.label; } else btn.classList.add('hidden');
     // walking right into a doorway enters automatically
     if (H.near && !H.near.kiosk && nd < 1.3 && H.cooldown <= 0 && !SP.UI.open && m > 0.05) { H.cooldown = 2.5; H.useDoor(); }
     V.tags.forEach((t) => { if (t.el.className.indexOf('door') >= 0) { t.obj.getWorldPosition(_ct); t.hide = H.area !== 'plaza' || Math.hypot(_ct.x - p.x, _ct.z - p.z) > 16; } });
@@ -289,6 +294,7 @@
     let cx, cz, lx, lz;
     if (H.area === 'plaza') { const r = Math.hypot(p.x, p.z); let ox = r > 4 ? p.x / r : Math.sin(H.camA || 0), oz = r > 4 ? p.z / r : Math.cos(H.camA || Math.PI); if (r <= 4) { ox = 0; oz = -1; } H.camA = Math.atan2(ox, oz);
       cx = p.x - ox * 9.5; cz = p.z - oz * 9.5; lx = p.x + ox * 7; lz = p.z + oz * 7; E_cam(cx, 6.8, cz, lx, 2.2, lz, dt, H.camSnap); }
+    else if (ROOMS[H.area].cam) ROOMS[H.area].cam(p, dt, H.camSnap, E_cam);
     else { const rm = ROOMS[H.area]; cx = U.clamp(p.x, rm.x - rm.w / 2 + 2, rm.x + rm.w / 2 - 2); cz = Math.min(p.z + 6, rm.z + rm.d / 2 - 0.4); E_cam(cx, 5.4, cz, p.x, 0.9, p.z - 4, dt, H.camSnap); }
     H.camSnap = false;
   };

@@ -97,7 +97,7 @@
 
   /* ---------- sport setup (when you walk into a venue) ---------- */
   UI.setup = function (sid) {
-    const sp = D.sport(sid), s = G().save, rk = D.rankOf(s.xp[sid] || 0); let mode = (s.lastMode && s.lastMode[sid]) || sp.modes[0].id, diff = s.opts.diff, cpus = 1;
+    const sp = D.sport(sid), s = G().save, rk = D.rankOf(s.xp[sid] || 0); let mode = (s.lastMode && s.lastMode[sid]) || sp.modes[0].id, diff = s.opts.diff, cpus = sp.defCpus || 1;
     const best = s.best[sid] || {};
     const html = () => {
       const m = sp.modes.find((x) => x.id === mode) || sp.modes[0];
@@ -106,7 +106,7 @@
         '<div class="rankBar"><i style="width:' + Math.round(rk.prog * 100) + '%"></i></div>' +
         '<h3>MODE</h3>' + segH('sMode', sp.modes.map((x) => [x.id, x.n])) + '<p class="sub">' + esc(m.desc) + '</p>' +
         '<h3>CPU LEVEL</h3>' + segH('sDiff', D.DIFF_ORDER.map((k) => [k, D.DIFF[k].n])) +
-        (m.turns ? '<h3>CPU PLAYERS</h3>' + segH('sCpu', [['1', '1'], ['2', '2'], ['3', '3']]) : '') +
+        (m.turns ? '<h3>' + (sp.id === 'mascot' ? 'CPU RACERS' : 'CPU PLAYERS') + '</h3>' + segH('sCpu', [['1', '1'], ['2', '2'], ['3', '3']]) : '') +
         (Object.keys(best).length ? '<p class="sub">📋 Your best: ' + Object.keys(best).map((k) => esc(k) + ' ' + best[k]).join(' · ') + '</p>' : '') +
         '<div class="btnrow"><button class="btn blue small" id="bHowS">❓ HOW TO PLAY</button></div>' +
         '<div class="btnrow"><button class="btn alt" id="bBack">⬅ PLAZA</button><button class="btn primary big" id="bGo">▶ PLAY!</button></div>';

@@ -247,22 +247,22 @@
 
   /* ---------- seated / standing fans: merged crowd geometry ---------- */
   // spots: [{x,y,z,ry,stand}] -> group of a few merged meshes (for cheering groups)
-  M.crowd = function (spots, seed, groups) {
+  M.crowd = function (spots, seed, groups, lite) {
     const rnd = U.rng(seed || 7), n = groups || 3, bs = []; for (let i = 0; i < n; i++) bs.push(new B());
     const shirts = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ec4899', '#14b8a6', '#f97316', '#ffffff', '#facc15', '#0ea5e9'];
     const hairs = ['#2d1b0e', '#5b3a1e', '#a0522d', '#f6c344', '#111827', '#9ca3af', '#c2410c'];
-    const lowd = M.low;
+    const lowd = M.low || !!lite;
     spots.forEach((s, i) => {
       const b = bs[i % n], skin = SP.D.SKINS[Math.floor(rnd() * 5)], sh = shirts[Math.floor(rnd() * shirts.length)], hr = hairs[Math.floor(rnd() * hairs.length)];
       const cs = Math.cos(s.ry || 0), sn = Math.sin(s.ry || 0), P = (lx, ly, lz) => [s.x + lx * cs + lz * sn, s.y + ly, s.z - lx * sn + lz * cs];
       const sc = 0.9 + rnd() * 0.2, by = s.stand ? 0.75 : 0.3;
       let p = P(0, by + 0.32 * sc, 0); b.capLo(0.2 * sc, 0.28 * sc, sh, p[0], p[1], p[2]);
-      p = P(0, by + 0.75 * sc, 0); b.sph(0.17 * sc, skin, p[0], p[1], p[2], 1, 1, 1, 0, 0, 0, null, lowd ? 7 : 10, lowd ? 5 : 7);
-      p = P(0, by + 0.8 * sc, -0.02); b.sph(0.175 * sc, hr, p[0], p[1], p[2], 1, 0.85, 1, -0.4, s.ry || 0, 0, null, lowd ? 7 : 10, lowd ? 5 : 6);
+      p = P(0, by + 0.75 * sc, 0); b.sph(0.17 * sc, skin, p[0], p[1], p[2], 1, 1, 1, 0, 0, 0, null, lite ? 6 : lowd ? 7 : 10, lite ? 4 : lowd ? 5 : 7);
+      p = P(0, by + 0.8 * sc, -0.02); b.sph(0.175 * sc, hr, p[0], p[1], p[2], 1, 0.85, 1, -0.4, s.ry || 0, 0, null, lite ? 6 : lowd ? 7 : 10, lite ? 4 : lowd ? 5 : 6);
       if (!lowd) { [-1, 1].forEach((k) => { const e = P(k * 0.06 * sc, by + 0.77 * sc, 0.155 * sc); b.sph(0.025, '#1b1530', e[0], e[1], e[2], 1, 1, 1, 0, 0, 0, null, 5, 4); }); }
       if (rnd() < 0.3) { const hp = P(0, by + 0.9 * sc, 0); b.sph(0.18 * sc, shirts[Math.floor(rnd() * shirts.length)], hp[0], hp[1], hp[2], 1, 0.55, 1, 0, 0, 0, null, 9, 5); }
       // arms (some raised)
-      const up = rnd() < 0.35; [-1, 1].forEach((k) => { const a = P(k * 0.22 * sc, by + (up ? 0.7 : 0.3) * sc, up ? 0 : 0.08); b.capLo(0.055 * sc, 0.25 * sc, sh, a[0], a[1], a[2], up ? 0 : 0.6, s.ry || 0, k * (up ? -0.25 : 0.1)); });
+      const up = rnd() < 0.35; [-1, 1].forEach((k) => { const a = P(k * 0.22 * sc, by + (up ? 0.7 : 0.3) * sc, up ? 0 : 0.08); if (lite) b.box(0.1 * sc, 0.34 * sc, 0.1 * sc, 0, sh, a[0], a[1], a[2], up ? 0 : 0.6, s.ry || 0, k * (up ? -0.25 : 0.1)); else b.capLo(0.055 * sc, 0.25 * sc, sh, a[0], a[1], a[2], up ? 0 : 0.6, s.ry || 0, k * (up ? -0.25 : 0.1)); });
       if (s.stand) { [-1, 1].forEach((k) => { const l = P(k * 0.09, 0.38, 0); b.capLo(0.075, 0.5, '#334155', l[0], l[1], l[2]); }); }
       
       if (rnd() < 0.12) { const f = P(0.25, by + 1.05 * sc, 0.05); b.box(0.3, 0.2, 0.02, 0.01, ['#ff4fd8', '#22c55e', '#facc15'][Math.floor(rnd() * 3)], f[0], f[1], f[2], 0, s.ry || 0, 0, 'glow'); } // foam signs
